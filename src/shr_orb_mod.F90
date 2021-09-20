@@ -94,8 +94,8 @@ CONTAINS
     !----------------------------------------------------------------------------
     real   (SHR_KIND_R8),intent(in) :: z            ! Solar zenith angle (radians)
     real   (SHR_KIND_R8),intent(in) :: azimuth      ! Solar azimuth angle (radians)
-    real   (SHR_KIND_R8),intent(in) :: beta         ! column slope angle (radians)
-    real   (SHR_KIND_R8),intent(in) :: aspect       ! column azimuth angle (radians)
+    real   (SHR_KIND_R8),intent(in) :: beta         ! Surface slope angle (radians)
+    real   (SHR_KIND_R8),intent(in) :: aspect       ! Surface azimuth angle (radians)
     
     !----------------------------------------------------------------------------
     
