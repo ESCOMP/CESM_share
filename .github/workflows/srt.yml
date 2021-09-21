@@ -45,7 +45,7 @@ jobs:
       - name: cime checkout
         uses: actions/checkout@v2
         with:
-          repository: fischer-ncar/cime
+          repository: ESMCI/cime
 
       - name: cpl7 checkout
         uses: actions/checkout@v2
