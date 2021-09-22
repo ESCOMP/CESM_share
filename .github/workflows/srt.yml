@@ -66,24 +66,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: cache mct
-        id: cache-mct
-        uses: actions/cache@v2
-        with:
-          path: $HOME/work/CESM_share/CESM_share/libraries/mct
-          key: ${{ runner.os }}-${{ env.MCT_VERSION}}-mct
-
       - name: mct install
         run: |
           git clone -b ${{ env.MCT_VERSION  }} https://github.com/MCSclimate/MCT libraries/mct
           ls -l libraries/mct
-
-      - name: cache parallelio
-        id: cache-parallelio
-        uses: actions/cache@v2
-        with:
-          path: $HOME/work/CESM_share/CESM_share/libraries/parallelio
-          key: ${{ runner.os }}-${{ env.PARALLELIO_VERSION}}-parallelio
 
       - name: parallelio install
         run: |
