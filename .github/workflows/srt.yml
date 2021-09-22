@@ -71,7 +71,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: $HOME/work/CESM_share/CESM_share/libraries/mct
-          key: ${{ runner.os }}-${{ env.MCT_VERSION}}-mct-redo
+          key: ${{ runner.os }}-${{ env.MCT_VERSION}}-mct
 
       - name: mct install
         if: steps.cache-mct.outputs.cache-hit != 'true'
@@ -84,7 +84,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: $HOME/work/CESM_share/CESM_share/libraries/parallelio
-          key: ${{ runner.os }}-${{ env.PARALLELIO_VERSION}}-parallelio-redo
+          key: ${{ runner.os }}-${{ env.PARALLELIO_VERSION}}-parallelio
 
       - name: parallelio install
         if: steps.cache-parallelio.outputs.cache-hit != 'true'
