@@ -1789,12 +1789,6 @@ contains
     character(SHR_KIND_CXX)                    :: retString   ! colon delimited field list
 
     integer(SHR_KIND_IN) :: l_field1  ! local version of field1
-    if (present(field1)) then
-        l_field1 = field1
-    else
-        l_field1 = 1
-    end if
-
     integer                          :: idx         ! index for looping over numFields
     integer                          :: numFields   ! number of fields
     integer(SHR_KIND_IN)             :: t01 = 0     ! timer
@@ -1811,6 +1805,12 @@ contains
 
     if ( debug > 1 .and. t01 < 1 ) call shr_timer_get( t01,subName )
     if ( debug > 1 ) call shr_timer_start( t01 )
+
+    if (present(field1)) then
+       l_field1 = field1
+    else
+       l_field1 = 1
+    end if
 
     SHR_ASSERT_FL( ( l_field1 < fieldN ) , __FILE__, __LINE__)
 
