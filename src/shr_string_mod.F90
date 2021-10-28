@@ -62,8 +62,6 @@ module shr_string_mod
   ! given array of suffixes and a base string
   public :: shr_string_listCreateField ! return colon delimited field list
   ! given number of fields N and a base string
-  public :: shr_string_listCreateField_range ! return colon delimited field list
-  ! given starting and ending field numbers, plus a base string
   public :: shr_string_listAddSuffix   ! add a suffix to every field in a field list
   public :: shr_string_setAbort        ! set local abort flag
   public :: shr_string_setDebug        ! set local debug flag
@@ -1834,89 +1832,6 @@ contains
     if ( debug > 1 ) call shr_timer_stop ( t01 )
 
   end function shr_string_listCreateField
-
-  !===============================================================================
-  !
-  ! shr_string_listCreateField_range
-  !
-  !   Returns a string of colon delimited fields for use in shr_strdata_create
-  !   arguments, fldListFile and fldListModel.
-  !   Use to create actual args for shr_strdata_create (fldListFile and
-  !   flidListModel).
-  !
-  !   This works for fieldN up to 999.  Modify the string write if you want
-  !   more range.
-  !
-  !   retString = shr_string_listCreateField_range(field1, fieldN, strBase)
-  !        given field1 = 1, fieldN = 5, and strBase = sdate, returns:
-  !            sdate_1:sdate_2:sdate_3:sdate_4:sdate_5
-  !
-  !===============================================================================
-  function shr_string_listCreateField_range( field1, fieldN, strBase ) result ( retString )
-
-    implicit none
-
-    integer(SHR_KIND_IN), intent(in) :: field1      ! first field
-    integer(SHR_KIND_IN), intent(in) :: fieldN      ! last field
-    character(len=*)    , intent(in) :: strBase     ! input string base
-    character(SHR_KIND_CXX)          :: retString   ! colon delimited field list
-
-    integer                          :: idx         ! index for looping over numFields
-    integer                          :: numFields   ! number of fields
-    integer(SHR_KIND_IN)             :: t01 = 0     ! timer
-    character(SHR_KIND_CX)           :: tmpString   ! temporary
-    character(SHR_KIND_CX)           :: intAsChar   ! temporary
-    character(1), parameter          :: colonStr = ':'
-    character(1), parameter          :: underStr = '_'
-
-    !--- formats ---
-    character(*),parameter :: subName = "(shr_string_listCreateField_range) "
-    character(*),parameter :: F00     = "('(shr_string_listCreateField_range) ',a) "
-
-    !-------------------------------------------------------------------------------
-
-    if ( debug > 1 .and. t01 < 1 ) call shr_timer_get( t01,subName )
-    if ( debug > 1 ) call shr_timer_start( t01 )
-
-    SHR_ASSERT_FL( ( field1 < fieldN ) , __FILE__, __LINE__)
-
-    !
-    ! this assert isn't that accurate since it counts all integers as being one
-    ! digit, but it should catch most errors and under rather than overestimates
-    !
-    numFields = fieldN - field1 + 1
-    SHR_ASSERT_FL( ( ( ( len(strBase) + 3 ) * numFields ) <= 1024 ) , __FILE__, __LINE__)
-
-    retString = ''
-    do idx = field1,fieldN
-
-       ! reset temps per numField
-       intAsChar = ''
-       tmpString = ''
-
-       ! string conversion based on 1,2,3 digits
-       if ( idx < 10 ) then
-          write(intAsChar, "(I1)") idx
-       else if ( idx >= 10 .and. idx < 100 ) then
-          write(intAsChar, "(I2)") idx
-       else
-          write(intAsChar, "(I3)") idx
-       end if
-
-       tmpString = trim(StrBase)//trim(underStr)//trim(intAsChar)
-
-       if ( idx > field1 ) then
-          tmpString = trim(colonStr)//trim(tmpString)
-       end if
-
-       retString = trim(retString)//trim(tmpString)
-
-    end do
-
-    if ( debug > 1 ) call shr_timer_stop ( t01 )
-
-  end function shr_string_listCreateField_range
-
 
   !===============================================================================
   !
