@@ -69,7 +69,7 @@ def buildlib(bldroot, installpath, case):
 
     if comp_interface == "nuopc":
         filepath.append(os.path.join(srcroot,"share","cmeps"))
-        filepath.append(os.path.join(srcroot,"components","cmeps", "nuopc_cap_share"))
+        filepath.append(os.path.join(srcroot,"components","cmeps", "cesm", "nuopc_cap_share"))
         #
         # Provide an interface to the CrayLabs SmartSim tools, if the tools are not used
         # then build a stub interface.  See cime/tools/smartsim/README.md for details
