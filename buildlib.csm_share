@@ -68,8 +68,8 @@ def buildlib(bldroot, installpath, case):
     # Append path for driver - currently only values of 'mct' and 'nuopc' are accepted
 
     if comp_interface == "nuopc":
-        filepath.append(os.path.join(srcroot,"share","cmeps"))
-        filepath.append(os.path.join(srcroot,"components","cmeps", "nuopc_cap_share"))
+        filepath.append(os.path.join(srcroot,"components","cmeps", "cesm", "nuopc_cap_share"))
+        filepath.append(os.path.join(srcroot,"components","cmeps", "cesm", "flux_atmocn"))
         #
         # Provide an interface to the CrayLabs SmartSim tools, if the tools are not used
         # then build a stub interface.  See cime/tools/smartsim/README.md for details
