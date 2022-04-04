@@ -150,6 +150,7 @@ jobs:
           export NETCDF=$HOME/netcdf-fortran
           export PATH=$NETCDF/bin:$PATH
           export LD_LIBRARY_PATH=$NETCDF/lib:$HOME/pnetcdf/lib:$LD_LIBRARY_PATH
+          export CIME_TEST_PLATFORM=ubuntu-latest
           python -m pip install pytest pytest-cov
           pytest -vvv --no-fortran-run --compiler gnu --mpilib openmpi --machine ubuntu-latest
 
