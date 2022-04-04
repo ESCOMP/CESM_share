@@ -57,6 +57,7 @@ module pio
   end type PIO_rearr_opt_t
 
   integer, parameter, private ::          &
+       i2        = selected_int_kind(2)   ,&
        i4        = selected_int_kind(6)   ,&
        i8        = selected_int_kind(13)  ,&
        r4        = selected_real_kind(6)  ,&
@@ -652,7 +653,7 @@ contains
     ierr = 0
   end function put_att_{TYPE}
 
-! TYPE real,double,int
+! TYPE real,double,int,short
   integer function put_att_1d_{TYPE} (File, varid, name, value) result(ierr)
     type (File_desc_t), intent(inout) , target :: File
     integer, intent(in) :: varid
@@ -671,7 +672,7 @@ contains
     ierr = 0
   end function put_att_desc_{TYPE}
 
-! TYPE real,int,double
+! TYPE real,int,double,short
   integer function put_att_desc_1d_{TYPE} (File,varDesc,name,value) result(ierr)
     type (File_desc_t), intent(inout) , target :: File
     type (VAR_desc_t), intent(in)     :: varDesc
@@ -689,7 +690,7 @@ contains
     ierr = 0
   end function put_var1_text
 
-! TYPE int,real,double
+! TYPE int,real,double,short
   integer function put_var1_{TYPE} (File,varid, index, ival) result(ierr)
     type (File_desc_t), intent(inout) :: File
     integer, intent(in) :: varid, index(:)
@@ -718,7 +719,7 @@ contains
   end function put_var_{DIMS}d_text
 
 ! DIMS 1,2,3,4,5
-! TYPE int,real,double
+! TYPE int,real,double,short
   integer function put_var_{DIMS}d_{TYPE} (File,varid, ival) result(ierr)
     type (File_desc_t), intent(inout) :: File
     integer, intent(in) :: varid
@@ -727,7 +728,7 @@ contains
     ierr = 0
   end function put_var_{DIMS}d_{TYPE}
 
-! TYPE int,real,double
+! TYPE int,real,double,short
   integer function put_var_0d_{TYPE} (File,varid, ival) result(ierr)
     type (File_desc_t), intent(inout) :: File
     integer, intent(in) :: varid
@@ -755,7 +756,7 @@ contains
     ierr = 0
   end function put_vara_{DIMS}d_text
 
-! TYPE int,real,double
+! TYPE int,real,double,short
 ! DIMS 1,2,3,4,5
   integer function put_vara_{DIMS}d_{TYPE} (File,varid, start, count, ival) result(ierr)
     type (File_desc_t), intent(inout) :: File
