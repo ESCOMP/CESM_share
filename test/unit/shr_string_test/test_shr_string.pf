@@ -148,10 +148,19 @@ contains
   subroutine test_shr_string_listCreateField_basic()
     character(len=list_len) :: actual, expected
 
-    actual = shr_string_listCreateField(numFields = 5, strBase = 'LAI')
+    actual = shr_string_listCreateField(fieldN = 5, strBase = 'LAI')
     expected = 'LAI_1:LAI_2:LAI_3:LAI_4:LAI_5'
     @assertEqual(expected, actual)
   end subroutine test_shr_string_listCreateField_basic
+
+  @Test
+  subroutine test_shr_string_listCreateField_changeField1()
+    character(len=list_len) :: actual, expected
+
+    actual = shr_string_listCreateField(fieldN = 5, strBase = 'LAI', field1 = 3)
+    expected = 'LAI_3:LAI_4:LAI_5'
+    @assertEqual(expected, actual)
+  end subroutine test_shr_string_listCreateField_changeField1
 
   ! ------------------------------------------------------------------------
   ! Tests of shr_string_listAddSuffix

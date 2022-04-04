@@ -1756,7 +1756,7 @@ contains
 
   end function shr_string_listFromSuffixes
 
-  !===============================================================================
+ !===============================================================================
   !
   ! shr_string_listCreateField
   !
@@ -1765,23 +1765,32 @@ contains
   !   Use to create actual args for shr_strdata_create (fldListFile and
   !   flidListModel).
   !
-  !   This works for numFields up to 999.  Modify the string write if you want
+  !   field1 is optional. If not provided, it is assumed to be 1.
+  !
+  !   This works for fieldN up to 999.  Modify the string write if you want
   !   more range.
   !
-  !   retString = shr_string_listCreateField(numFields, strBase)
-  !        given numFields = 5 and strBase = LAI, returns:
+  !   retString = shr_string_listCreateField(fieldN, strBase)
+  !        given fieldN = 5 and strBase = LAI, returns:
   !            LAI_1:LAI_2:LAI_3:LAI_4:LAI_5
   !
+  !   retString = shr_string_listCreateField(fieldN, strBase, field1)
+  !        given field1 = 2, fieldN = 6, and strBase = LAI, returns:
+  !            LAI_2:LAI_3:LAI_4:LAI_5:LAI_6
+  !
   !===============================================================================
-  function shr_string_listCreateField( numFields, strBase ) result ( retString )
+  function shr_string_listCreateField( fieldN, strBase, field1 ) result ( retString )
 
     implicit none
 
-    integer(SHR_KIND_IN), intent(in) :: numFields   ! number of fields
-    character(len=*)    , intent(in) :: strBase     ! input string base
-    character(SHR_KIND_CXX)          :: retString   ! colon delimited field list
+    integer(SHR_KIND_IN), intent(in)           :: fieldN      ! last field
+    character(len=*)    , intent(in)           :: strBase     ! input string base
+    integer(SHR_KIND_IN), intent(in), optional :: field1
+    character(SHR_KIND_CXX)                    :: retString   ! colon delimited field list
 
+    integer(SHR_KIND_IN) :: l_field1  ! local version of field1
     integer                          :: idx         ! index for looping over numFields
+    integer                          :: numFields   ! number of fields
     integer(SHR_KIND_IN)             :: t01 = 0     ! timer
     character(SHR_KIND_CX)           :: tmpString   ! temporary
     character(SHR_KIND_CX)           :: intAsChar   ! temporary
@@ -1797,14 +1806,23 @@ contains
     if ( debug > 1 .and. t01 < 1 ) call shr_timer_get( t01,subName )
     if ( debug > 1 ) call shr_timer_start( t01 )
 
+    if (present(field1)) then
+       l_field1 = field1
+    else
+       l_field1 = 1
+    end if
+
+    SHR_ASSERT_FL( ( l_field1 <= fieldN ) , __FILE__, __LINE__)
+
     !
     ! this assert isn't that accurate since it counts all integers as being one
     ! digit, but it should catch most errors and under rather than overestimates
     !
+    numFields = fieldN - l_field1 + 1
     SHR_ASSERT_FL( ( ( ( len(strBase) + 3 ) * numFields ) <= 1024 ) , __FILE__, __LINE__)
 
     retString = ''
-    do idx = 1,numFields
+    do idx = l_field1,fieldN
 
        ! reset temps per numField
        intAsChar = ''
@@ -1821,7 +1839,7 @@ contains
 
        tmpString = trim(StrBase)//trim(underStr)//trim(intAsChar)
 
-       if ( idx > 1 ) then
+       if ( idx > l_field1 ) then
           tmpString = trim(colonStr)//trim(tmpString)
        end if
 
