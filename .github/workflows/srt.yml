@@ -44,6 +44,12 @@ jobs:
         with:
           repository: ESMCI/cime
 
+      - name: genf90 checkout
+        uses: actions/checkout@v2
+        with:
+          repository: PARALLELIO/genf90
+          path: CIME/non_py/externals/genf90
+
       - name: ccs_config checkout
         uses: actions/checkout@v2
         with:
