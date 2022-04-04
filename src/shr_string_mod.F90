@@ -1783,9 +1783,9 @@ contains
 
     implicit none
 
-    integer(SHR_KIND_IN), intent(in), optional :: field1
     integer(SHR_KIND_IN), intent(in)           :: fieldN      ! last field
     character(len=*)    , intent(in)           :: strBase     ! input string base
+    integer(SHR_KIND_IN), intent(in), optional :: field1
     character(SHR_KIND_CXX)                    :: retString   ! colon delimited field list
 
     integer(SHR_KIND_IN) :: l_field1  ! local version of field1
