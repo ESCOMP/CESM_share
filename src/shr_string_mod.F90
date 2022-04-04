@@ -1812,7 +1812,7 @@ contains
        l_field1 = 1
     end if
 
-    SHR_ASSERT_FL( ( l_field1 < fieldN ) , __FILE__, __LINE__)
+    SHR_ASSERT_FL( ( l_field1 <= fieldN ) , __FILE__, __LINE__)
 
     !
     ! this assert isn't that accurate since it counts all integers as being one
