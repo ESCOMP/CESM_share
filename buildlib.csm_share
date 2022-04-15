@@ -54,22 +54,23 @@ def buildlib(bldroot, installpath, case):
     caseroot = case.get_value("CASEROOT")
     libroot = case.get_value("LIBROOT")
 
-    filepath = [os.path.join(caseroot,"SourceMods","src.share"),
-                os.path.join(srcroot,"share","src"),
-                os.path.join(srcroot,"share","src","water_isotopes"),
-                os.path.join(srcroot,"share","RandNum","src"),
-                os.path.join(srcroot,"share","RandNum","src","dsfmt_f03"),
-                os.path.join(srcroot,"share","RandNum","src","kissvec"),
-                os.path.join(srcroot,"share","RandNum","src","mt19937"),
-                os.path.join(srcroot,"components","cpl7","mct_shr"),
-                os.path.join(srcroot,"components","cpl7","components","data_comps_mct","streams")]
-
-
+    filepath = [os.path.join(caseroot,"SourceMods","src.share")]
     # Append path for driver - currently only values of 'mct' and 'nuopc' are accepted
-
     if comp_interface == "nuopc":
         filepath.append(os.path.join(srcroot,"components","cmeps", "cesm", "nuopc_cap_share"))
         filepath.append(os.path.join(srcroot,"components","cmeps", "cesm", "flux_atmocn"))
+
+    filepath.extend([os.path.join(srcroot,"share","src"),
+                     os.path.join(srcroot,"share","src","water_isotopes"),
+                     os.path.join(srcroot,"share","RandNum","src"),
+                     os.path.join(srcroot,"share","RandNum","src","dsfmt_f03"),
+                     os.path.join(srcroot,"share","RandNum","src","kissvec"),
+                     os.path.join(srcroot,"share","RandNum","src","mt19937"),
+                     os.path.join(srcroot,"components","cpl7","mct_shr"),
+                     os.path.join(srcroot,"components","cpl7","components","data_comps_mct","streams")])
+
+
+    if comp_interface == "nuopc":
         #
         # Provide an interface to the CrayLabs SmartSim tools, if the tools are not used
         # then build a stub interface.  See cime/tools/smartsim/README.md for details
