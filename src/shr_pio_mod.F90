@@ -42,7 +42,7 @@ module shr_pio_mod
   end type pio_comp_t
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! The following variables are public just for the sake of the driver's init_pio_mod;
+  ! The following variables are public just for the sake of the driver's driver_pio_mod;
   ! these NEED to be set by that module.
   !
   ! No other subroutines should access these directly! Any other access should go
@@ -52,7 +52,7 @@ module shr_pio_mod
   type(iosystem_desc_t), allocatable, target, public :: iosystems(:)
   integer, allocatable, public :: io_compid(:)
 
-  ! Similarly, this function is public just for the sake of the driver's init_pio_mod;
+  ! Similarly, this function is public just for the sake of the driver's driver_pio_mod;
   ! it should not be used elsewhere.
   public :: shr_pio_getindex
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
