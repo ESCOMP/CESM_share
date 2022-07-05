@@ -42,7 +42,9 @@ module shr_pio_mod
   end type pio_comp_t
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! The following variables are public just for the sake of the driver's init_pio_mod.
+  ! The following variables are public just for the sake of the driver's init_pio_mod;
+  ! these NEED to be set by that module.
+  !
   ! No other subroutines should access these directly! Any other access should go
   ! through the above accessor routines.
   character(len=16), allocatable, public :: io_compname(:)
