@@ -244,7 +244,7 @@ contains
     type(ESMF_CALKIND_FLAG) :: calkind
     character(len=shr_cal_calMaxLen) :: lcalendar
     integer :: lrc
-    character(*),parameter :: subName = "(shr_cal_timeSet)"
+    character(*),parameter :: subName = "(shr_cal_timeSet_int)"
 
     !-------------------------------------------------------------------------------
     !
@@ -253,9 +253,10 @@ contains
 
     lcalendar = shr_cal_calendarName(calendar)
 
-    calkind = ESMF_CALKIND_NOLEAP
     if (trim(lcalendar) == trim(shr_cal_gregorian)) then
        calkind = ESMF_CALKIND_GREGORIAN
+    else
+       calkind = ESMF_CALKIND_NOLEAP
     endif
 
     call shr_cal_date2ymd(ymd,year,month,day)
@@ -293,9 +294,10 @@ contains
 
     lcalendar = shr_cal_calendarName(calendar)
 
-    calkind = ESMF_CALKIND_NOLEAP
     if (trim(lcalendar) == trim(shr_cal_gregorian)) then
        calkind = ESMF_CALKIND_GREGORIAN
+    else
+       calkind = ESMF_CALKIND_NOLEAP
     endif
 
     call shr_cal_date2ymd(ymd,year,month,day)
