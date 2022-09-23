@@ -89,7 +89,7 @@ module shr_cal_mod
   public :: shr_cal_ymdtod2string ! translate ymdtod to string for filenames
   public :: shr_cal_datetod2string ! translate date to string for filenames
   public :: shr_cal_ymds2rday_offset ! translate yr,month,day,sec offset to a fractional day offset
-
+  public :: shr_cal_leapyear    ! logical function: is this a gregorian leap year?
   ! !PUBLIC DATA MEMBERS:
 
   ! none
@@ -244,7 +244,7 @@ contains
     type(ESMF_CALKIND_FLAG) :: calkind
     character(len=shr_cal_calMaxLen) :: lcalendar
     integer :: lrc
-    character(*),parameter :: subName = "(shr_cal_timeSet)"
+    character(*),parameter :: subName = "(shr_cal_timeSet_int)"
 
     !-------------------------------------------------------------------------------
     !
@@ -253,9 +253,10 @@ contains
 
     lcalendar = shr_cal_calendarName(calendar)
 
-    calkind = ESMF_CALKIND_NOLEAP
     if (trim(lcalendar) == trim(shr_cal_gregorian)) then
        calkind = ESMF_CALKIND_GREGORIAN
+    else
+       calkind = ESMF_CALKIND_NOLEAP
     endif
 
     call shr_cal_date2ymd(ymd,year,month,day)
@@ -293,9 +294,10 @@ contains
 
     lcalendar = shr_cal_calendarName(calendar)
 
-    calkind = ESMF_CALKIND_NOLEAP
     if (trim(lcalendar) == trim(shr_cal_gregorian)) then
        calkind = ESMF_CALKIND_GREGORIAN
+    else
+       calkind = ESMF_CALKIND_NOLEAP
     endif
 
     call shr_cal_date2ymd(ymd,year,month,day)
@@ -1409,6 +1411,21 @@ contains
     call ESMF_TimeIntervalGet(timeinterval = timeinterval, d_r8 = rdays_offset, rc = rc)
     if(rc /= ESMF_SUCCESS) call ESMF_Finalize(rc=rc, endflag=ESMF_END_ABORT)
   end subroutine shr_cal_ymds2rday_offset
+
+  logical function shr_cal_leapyear(yr)
+    integer, intent(in) :: yr
+    shr_cal_leapyear = .false.
+    if (modulo(yr, 4) == 0) then
+       if (modulo(yr, 100) == 0) then
+          if(modulo(yr, 400) == 0) then
+             shr_cal_leapyear =  .true.
+          endif
+       else
+          shr_cal_leapyear =  .true.
+       endif
+    endif
+
+  end function shr_cal_leapyear
 
   !===============================================================================
 end module shr_cal_mod
