@@ -884,11 +884,11 @@ CONTAINS
   !BOP ===========================================================================
   !
   ! !IROUTINE: shr_file_setLogUnit -- Set the Log I/O Unit number
-  !
+  ! Depricated - use shr_log_setLogUnit
   ! !INTERFACE: ------------------------------------------------------------------
 
   SUBROUTINE shr_file_setLogUnit(unit)
-
+    use shr_log_mod, only: shr_log_setLogUnit
     implicit none
 
     ! !INPUT/OUTPUT PARAMETERS:
@@ -909,8 +909,9 @@ CONTAINS
        write(s_logunit,*) subName,': reset log unit number from/to ',s_logunit, unit
        write(     unit,*) subName,': reset log unit number from/to ',s_logunit, unit
     endif
+    print *,__FILE__,__LINE__,'This routine is depricated - use shr_log_setLogUnit instead'
 #endif
-    s_logunit = unit
+    call shr_log_setLogUnit(unit)
 
   END SUBROUTINE shr_file_setLogUnit
 
