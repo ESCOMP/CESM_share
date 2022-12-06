@@ -39,6 +39,7 @@ module shr_pio_mod
      integer :: pio_iotype
      integer :: pio_rearranger
      integer :: pio_netcdf_ioformat
+     logical :: pio_async_interface
   end type pio_comp_t
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -152,7 +153,7 @@ contains
     end do
 
     if(index<0) then
-       write(msg, *) 'shr_pio_getindex :: compid=',compid,' out of allowed range: '
+       write(msg, *) 'shr_pio_getindex :: compid=',compid,' out of allowed range: ',io_compid
        call shr_sys_abort(msg)
     end if
   end function shr_pio_getindex_fromid
