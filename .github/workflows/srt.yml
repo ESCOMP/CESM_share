@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: [3.8, 3.9, 3.11]
     env:
       CC: mpicc
       FC: mpifort
@@ -27,9 +27,9 @@ jobs:
       CIME_TEST_PLATFORM: ubuntu-latest
       # Versions of all dependencies can be updated here
       PNETCDF_VERSION: pnetcdf-1.12.3
-      NETCDF_FORTRAN_VERSION: v4.5.2
+      NETCDF_FORTRAN_VERSION: v4.6.0
       MCT_VERSION: MCT_2.11.0
-      PARALLELIO_VERSION: pio2_5_7
+      PARALLELIO_VERSION: pio2_5_10
       NETCDF_C_PATH: /usr
       NETCDF_FORTRAN_PATH: ${HOME}/netcdf-fortran
       PNETCDF_PATH: ${HOME}/pnetcdf
@@ -41,7 +41,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
 
       - name: cime checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ESMCI/cime
           submodules: True
@@ -52,19 +52,19 @@ jobs:
 #          path: CIME/non_py/externals/genf90
 
       - name: ccs_config checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ESMCI/ccs_config_cesm
           path: ccs_config
 
       - name: share checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ESCOMP/CESM_share
           path: share
 
       - name: cpl7 checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: ESCOMP/CESM_CPL7andDataComps
           path: components/cpl7
@@ -95,7 +95,7 @@ jobs:
 
       - name: cache pnetcdf
         id: cache-pnetcdf
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/pnetcdf
           key: ${{ runner.os }}-${{ env.PNETCDF_VERSION}}-pnetcdf-redo
@@ -114,7 +114,7 @@ jobs:
 
       - name: Cache netcdf-fortran
         id: cache-netcdf-fortran
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/netcdf-fortran
           key: ${{ runner.os }}-${{ env.NETCDF_FORTRAN_VERSION }}-netcdf-fortran-redo
@@ -142,7 +142,7 @@ jobs:
 
       - name: Cache inputdata
         if: ${{ ! env.ACT }}
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: $HOME/cesm/inputdata
           key: inputdata
