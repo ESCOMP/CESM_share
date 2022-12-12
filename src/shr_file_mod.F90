@@ -909,7 +909,7 @@ CONTAINS
        write(s_logunit,*) subName,': reset log unit number from/to ',s_logunit, unit
        write(     unit,*) subName,': reset log unit number from/to ',s_logunit, unit
     endif
-    print *,__FILE__,__LINE__,'This routine is depricated - use shr_log_setLogUnit instead'
+    if(unit /= 6) print *,__FILE__,__LINE__,'This routine is depricated - use shr_log_setLogUnit instead', unit
 #endif
     call shr_log_setLogUnit(unit)
 
