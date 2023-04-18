@@ -1,6 +1,6 @@
 module dynamic_vector_integer
 
-use pfunit_mod, only: throw
+use funit, only: throw
 
 use shr_log_mod, only: OOBMsg => shr_log_OOBMsg
 
