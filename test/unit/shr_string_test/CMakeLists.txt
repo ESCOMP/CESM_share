@@ -15,6 +15,8 @@ set(sources_needed
 
 extract_sources("${sources_needed}" "${share_sources}" test_sources)
 
-create_pFUnit_test(shr_string shr_string_exe "${pf_sources}" "${test_sources}")
+add_pfunit_ctest(shr_string
+  TEST_SOURCES "${pf_sources}"
+  OTHER_SOURCES "${test_sources}")
 
-declare_generated_dependencies(shr_string_exe "${share_genf90_sources}")
+declare_generated_dependencies(shr_string "${share_genf90_sources}")

@@ -2,7 +2,7 @@ module dynamic_vector_int_ptr
 
 use ptr_wrapper, only: int_ptr
 
-use pfunit_mod, only: throw
+use funit, only: throw
 
 use shr_log_mod, only: OOBMsg => shr_log_OOBMsg
 

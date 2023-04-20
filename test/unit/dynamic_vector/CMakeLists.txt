@@ -82,7 +82,8 @@ c_preprocess(${type}_vector_tests.pf.in ${type}_vector_tests.pf
     dynamic_vector_${type}.F90)
 endforeach()
 
-create_pFUnit_test(dynamic_vector dynamic_vector_exe
-  "${pf_sources}" "${test_sources}")
+add_pfunit_ctest(dynamic_vector
+  TEST_SOURCES "${pf_sources}"
+  OTHER_SOURCES "${test_sources}")
 
-declare_generated_dependencies(dynamic_vector_exe "${share_genf90_sources}")
+declare_generated_dependencies(dynamic_vector "${share_genf90_sources}")

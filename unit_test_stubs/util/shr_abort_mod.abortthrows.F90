@@ -4,7 +4,7 @@ module shr_abort_mod
   ! aborting
 
   use shr_kind_mod, only : shr_kind_in
-  use pfunit_mod, only : throw
+  use funit, only : throw
 
   implicit none
   private

@@ -8,5 +8,6 @@ set(sources_needed
 extract_sources("${sources_needed}" "${share_sources}" test_sources)
 
 # Do source preprocessing and add the executable.
-create_pFUnit_test(shr_precip_mod shr_precip_mod_exe "${pf_sources}"
-  "${test_sources}")
+add_pfunit_ctest(shr_precip_mod
+  TEST_SOURCES "${pf_sources}"
+  OTHER_SOURCES "${test_sources}")

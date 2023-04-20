@@ -2,7 +2,7 @@ module int_ptr_vector_tests
 ! Module to test dynamic vector template on
 ! a derived type.
 
-use pfunit_mod
+use funit
 
 use shr_log_mod, only: OOBMsg => shr_log_OOBMsg
 

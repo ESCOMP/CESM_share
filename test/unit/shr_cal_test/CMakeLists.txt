@@ -28,7 +28,8 @@ list(APPEND test_sources ${esmf_wrf_timemgr_sources})
 add_definitions(-DHIDE_MPI)
 
 # Do source preprocessing and add the executable.
-create_pFUnit_test(shr_cal_mod shr_cal_exe "${pf_sources}"
-  "${test_sources}")
+add_pfunit_ctest(shr_cal_mod
+  TEST_SOURCES "${pf_sources}"
+  OTHER_SOURCES "${test_sources}")
 
-declare_generated_dependencies(shr_cal_exe "${share_genf90_sources}")
+declare_generated_dependencies(shr_cal_mod "${share_genf90_sources}")
