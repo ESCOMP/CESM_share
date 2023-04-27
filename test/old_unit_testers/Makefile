@@ -75,10 +75,10 @@ OBJS_STRMS  := test_shr_streams.o shr_kind_mod.o shr_stream_mod.o shr_sys_mod.o 
                shr_log_mod.o test_mod.o $(OBJS_NOMPI)
 OBJS_SCAM := test_shr_scam.o shr_strdata_mod.o shr_const_mod.o shr_kind_mod.o \
                shr_log_mod.o shr_sys_mod.o shr_file_mod.o shr_stream_mod.o \
-               shr_map_mod.o shr_string_mod.o shr_cal_mod.o shr_orb_mod.o \
-               shr_tinterp_mod.o shr_dmodel_mod.o shr_mct_mod.o mct_mod.o \
+               shr_string_mod.o shr_cal_mod.o shr_orb_mod.o \
+               shr_tinterp_mod.o shr_dmodel_mod.o mct_mod.o \
                perf_mod.o pio.o shr_mpi_mod.o seq_flds_mod.o shr_ncread_mod.o \
-               shr_scam_mod.o shr_pcdf_mod.o shr_mct_mod.o mct_mod.o shr_timer_mod.o \
+               shr_scam_mod.o mct_mod.o shr_timer_mod.o \
 	       seq_drydep_mod.o test_mod.o \
                $(OBJS_NOMPI) $(OBJS_MCT) $(OBJS_PIO) $(OBJS_TIM)
 OBJS_STIN   := test_shr_tInterp.o shr_kind_mod.o shr_const_mod.o shr_sys_mod.o \
