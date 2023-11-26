@@ -165,7 +165,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
       !-- If latitude variable ---
       if ( is_latlon( vars(nvarid), latitude=.true., varnotdim=.true. ) )then
          nlatdims = ndims
-         allocate( latdimnames(ndims) )
+         if (.not. allocated(latdimnames) ) allocate( latdimnames(ndims) )
          do ndimid =  1,ndims
             rcode = nf90_inquire_dimension(ncid, dimids(ndimid), latdimnames(ndimid), len)
             if (rcode /= nf90_noerr) then
@@ -185,7 +185,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
       !-- If longitude variable ---
       if ( is_latlon( vars(nvarid), latitude=.false., varnotdim=.true. ) )then
          nlondims = ndims
-         allocate( londimnames(ndims) )
+         if (.not. allocated(londimnames) ) allocate( londimnames(ndims) )
          do ndimid =  1,ndims
             rcode = nf90_inquire_dimension(ncid, dimids(ndimid), londimnames(ndimid), len)
             call shr_ncread_handleErr( rcode, subname &
@@ -220,7 +220,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
          call get_latlonindices( latitude=.true., dimnames=latdimnames, ndims=nlatdims, &
                                  nlen=latlen, strt=strt, cnt=cnt )
          nlat = latlen
-         allocate(lats(nlat))
+         if (.not. allocated(lats) ) allocate( lats(nlat) )
          rcode= nf90_get_var(ncid, nvarid ,lats, start = strt, count = cnt)
          call shr_ncread_handleErr( rcode, subname &
                            //"ERROR: Cant read netcdf latitude" )
@@ -236,7 +236,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
          call get_latlonindices( latitude=.false., ndims=nlondims, dimnames=londimnames, &
                                  nlen=lonlen, strt=strt, cnt=cnt )
          nlon = lonlen
-         allocate(lons(nlon))
+         if (.not. allocated(lons) ) allocate( lons(nlon) )
          rcode= nf90_get_var(ncid, nvarid ,lons, start = strt, count = cnt)
          call shr_ncread_handleErr( rcode, subname &
                            //"ERROR: Cant read netcdf longitude" )
@@ -430,7 +430,11 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
      islatitude=.false. ! if spectral element lat and lon
                         !   are on same array structure
      is_segrid=.true.
-   else
+   else if ( latlen==lonlen ) then
+     islatitude=.false. ! if spectral element lat and lon
+                        !   are on same array structure
+     is_segrid=.true.
+  else
      islatitude=.true.
      is_segrid=.false.
    endif
@@ -758,6 +762,8 @@ end subroutine shr_scam_checkSurface
 ! !INTERFACE: ------------------------------------------------------------------
 logical function is_latlon( var_name, latitude, varnotdim )
 ! !USES:
+  use shr_string_mod, only: shr_string_toLower
+
 ! !INPUT/OUTPUT PARAMETERS:
     implicit none
     character(len=*), intent(in) :: var_name  ! Input variable name
@@ -769,29 +775,26 @@ logical function is_latlon( var_name, latitude, varnotdim )
 
    !----- local variables -----
    character(len=3)  :: xyvar    ! Variable name for 2D x-y coordinate variables
-   character(len=3)  :: Capxyvar ! change xyvar to caps
    character(len=11) :: gcvar    ! Variable name for gridcell coordinate variables
+   character(len=CL) :: lowervar ! Lower case variable name
 !-------------------------------------------------------------------------------
 ! Notes:
 !-------------------------------------------------------------------------------
-
+    lowervar=shr_string_toLower(trim(var_name))
     is_latlon = .false.
     if ( latitude )then
       if ( varnotdim )then
          xyvar    = "yc"
-         Capxyvar = "YC"
          gcvar    = "grid1d_lat"
       else
          xyvar    = "nj"
-         Capxyvar = "NJ"
          gcvar    = "gridcell"
       end if
-      if ( trim(var_name) == 'lat'          .or. trim(var_name) == 'latixy'    .or. &
-           trim(var_name) == trim(xyvar)    .or. trim(var_name) == 'lsmlat'    .or. &
-           trim(var_name) == trim(gcvar)    .or.                                    &
-           trim(var_name) == 'LAT'          .or. trim(var_name) == 'LATIXY'    .or. &
-           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLAT'    .or. &
-           trim(var_name) == 'ncol')  then
+      if ( trim(lowervar) == 'lat'          .or. trim(lowervar) == 'latixy'    .or. &
+           trim(lowervar) == trim(xyvar)    .or. trim(lowervar) == 'lsmlat'    .or. &
+           trim(lowervar) == trim(gcvar)    .or. trim(lowervar) == 'lat_d'     .or. &
+           trim(lowervar) == 'ncol'         .or. trim(lowervar) == 'ncol_d'  &
+           )  then
            is_latlon = .true.
       else
            is_latlon = .false.
@@ -799,19 +802,15 @@ logical function is_latlon( var_name, latitude, varnotdim )
     else
       if ( varnotdim )then
          xyvar    = "xc"
-         Capxyvar = "XC"
          gcvar    = "grid1d_lon"
       else
          xyvar    = "ni"
-         Capxyvar = "NI"
          gcvar    = "gridcell"
       end if
-      if ( trim(var_name) == 'lon'          .or. trim(var_name) == 'longxy'    .or. &
-           trim(var_name) == trim(xyvar)    .or. trim(var_name) == 'lsmlon'    .or. &
-           trim(var_name) == trim(gcvar)    .or.                                    &
-           trim(var_name) == 'LON'          .or. trim(var_name) == 'LONGXY'    .or. &
-           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLON'    .or. &
-           trim(var_name) == 'ncol')  then
+      if ( trim(lowervar) == 'lon'          .or. trim(lowervar) == 'longxy'    .or. &
+           trim(lowervar) == trim(xyvar)    .or. trim(lowervar) == 'lsmlon'    .or. &
+           trim(lowervar) == trim(gcvar)    .or. trim(lowervar) == 'lon_d'     .or. &
+           trim(lowervar) == 'ncol'         .or. trim(lowervar) == 'ncol_d' )  then
            is_latlon = .true.
       else
            is_latlon = .false.
