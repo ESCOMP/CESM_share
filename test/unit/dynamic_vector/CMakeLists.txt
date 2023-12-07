@@ -7,7 +7,7 @@ if(${CMAKE_C_COMPILER_ID} STREQUAL GNU OR ${CMAKE_C_COMPILER_ID} STREQUAL Clang)
     set(${varname} ${CMAKE_C_COMPILER} -E -x c ${start_file} -o ${end_file}
       PARENT_SCOPE)
   endfunction()
-elseif(${CMAKE_C_COMPILER_ID} STREQUAL Intel)
+elseif(${CMAKE_C_COMPILER_ID} STREQUAL Intel OR ${CMAKE_C_COMPILER_ID} STREQUAL IntelLLVM)
   function(make_cpp_command varname start_file end_file)
     set(${varname} "${CMAKE_C_COMPILER} -E ${start_file} -o ${end_file}"
       PARENT_SCOPE)
