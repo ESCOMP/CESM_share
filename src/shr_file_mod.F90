@@ -61,6 +61,7 @@ MODULE shr_file_mod
   public :: shr_file_setLogLevel  ! Reset the logging debug level
   public :: shr_file_getLogUnit   ! Get the log unit number
   public :: shr_file_getLogLevel  ! Get the logging debug level
+  public :: shr_file_get_real_path ! Get a fully resolved path
 #if defined NEMO_IN_CCSM
    public :: shr_file_maxUnit      ! Max unit number to give
 #endif
@@ -1006,6 +1007,42 @@ CONTAINS
   END SUBROUTINE shr_file_getLogLevel
 
   !===============================================================================
+  subroutine shr_file_get_real_path(path, resolved_path)
+    use, intrinsic :: iso_c_binding
+    character(len=*), intent(in) :: path
+    character(len=*), intent(out) :: resolved_path
+
+    ! Define
+    integer :: n
+    character(len=1) :: a(SHR_KIND_CL)
+    type(c_ptr) :: ptr
+
+    ! Fortran interface to C function, realpath()
+    interface
+       function realpath(path,resolved_path) bind(c,name="realpath")
+         use, intrinsic :: iso_c_binding
+         type(c_ptr) :: realpath
+         character(len=1,kind=c_char), intent(in) :: path(*)
+         character(len=1,kind=c_char), intent(out) :: resolved_path(*)
+       end function realpath
+    end interface
+
+    ! Initialize
+    a=""
+    
+    ptr=realpath(trim(path)//C_NULL_CHAR,a)
+    
+    ! Transfer character array to character string
+    resolved_path = transfer(a,resolved_path)
+    
+    ! Determine the first null char
+    do n=1,SHR_KIND_CL
+       if(iachar(resolved_path(n:n)).eq.0) exit
+    end do
+    resolved_path=resolved_path(:n-1)
+  end subroutine shr_file_get_real_path
+
+
   !===============================================================================
 
 END MODULE shr_file_mod
