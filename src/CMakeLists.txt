@@ -28,10 +28,7 @@ list(APPEND share_sources
 # way, this list can be easily included in unit test builds that link to mct,
 # but excluded from builds that do not include mct.
 list(APPEND share_mct_sources
-  mct_mod.F90
-  shr_mct_mod.F90
-  shr_mpi_mod.F90
-  shr_pcdf_mod.F90)
+  shr_mpi_mod.F90)
 
 # Build a separate list containing the pio wrapper and its dependencies. That
 # way, this list can be easily included in unit test builds that include PIO or
