@@ -29,12 +29,12 @@ jobs:
       PNETCDF_VERSION: pnetcdf-1.12.3
       NETCDF_FORTRAN_VERSION: v4.6.0
       MCT_VERSION: MCT_2.11.0
-      PARALLELIO_VERSION: pio2_5_10
+      PARALLELIO_VERSION: pio2_6_2
       NETCDF_C_PATH: /usr
       NETCDF_FORTRAN_PATH: ${HOME}/netcdf-fortran
       PNETCDF_PATH: ${HOME}/pnetcdf
       CIME_MODEL: cesm
-      CIME_DRIVER: mct
+      CIME_DRIVER: nuopc
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -63,11 +63,17 @@ jobs:
           repository: ESCOMP/CESM_share
           path: share
 
-      - name: cpl7 checkout
+      - name: cmeps checkout
         uses: actions/checkout@v3
         with:
-          repository: ESCOMP/CESM_CPL7andDataComps
-          path: components/cpl7
+          repository: ESCOMP/CMEPS
+          path: components/cmeps
+
+      - name: cdeps checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ESCOMP/CDEPS
+          path: components/cdeps
 
       - id: load-env
         run: |

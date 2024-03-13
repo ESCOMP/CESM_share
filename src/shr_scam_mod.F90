@@ -20,12 +20,10 @@ module shr_scam_mod
 
 ! !USES:
 
-   use shr_kind_mod  ! defines kinds
-   use shr_sys_mod   ! system calls
-   use shr_file_mod  ! file utilities
-   use shr_kind_mod,    only : R8=>SHR_KIND_R8,IN=>SHR_KIND_IN,CL=>SHR_KIND_CL
-   use shr_log_mod,     only : s_loglev  => shr_log_Level
-   use shr_log_mod,     only : s_logunit => shr_log_Unit
+   use shr_abort_mod,  only : abort => shr_abort_abort   ! system calls
+   use shr_kind_mod,   only : R8=>SHR_KIND_R8,IN=>SHR_KIND_IN,CL=>SHR_KIND_CL
+   use shr_log_mod,    only : s_loglev  => shr_log_Level
+   use shr_log_mod,    only : s_logunit => shr_log_Unit
 
    implicit none
 
@@ -38,8 +36,7 @@ module shr_scam_mod
 ! !PUBLIC MEMBER FUNCTIONS:
 
    public :: shr_scam_getCloseLatLon ! return lat and lon point/index
-   public :: shr_scam_checkSurface   ! check grid fraction in focndomain dataset
-
+!
    interface shr_scam_getCloseLatLon
      module procedure shr_scam_getCloseLatLonNC
      module procedure shr_scam_getCloseLatLonPIO
@@ -83,7 +80,8 @@ CONTAINS
 subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, closeLon, &
                                      closeLatIdx, closeLonIdx, found, rc)
 ! !USES:
-   use netcdf
+   use netcdf         , only: nf90_max_var_dims, nf90_inquire, nf90_noerr, nf90_inquire_variable
+   use netcdf         , only: nf90_inquire_dimension, nf90_get_var
    use shr_ncread_mod, only: shr_ncread_handleErr
    implicit none
 
@@ -165,7 +163,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
       !-- If latitude variable ---
       if ( is_latlon( vars(nvarid), latitude=.true., varnotdim=.true. ) )then
          nlatdims = ndims
-         allocate( latdimnames(ndims) )
+         if (.not. allocated(latdimnames) ) allocate( latdimnames(ndims) )
          do ndimid =  1,ndims
             rcode = nf90_inquire_dimension(ncid, dimids(ndimid), latdimnames(ndimid), len)
             if (rcode /= nf90_noerr) then
@@ -185,7 +183,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
       !-- If longitude variable ---
       if ( is_latlon( vars(nvarid), latitude=.false., varnotdim=.true. ) )then
          nlondims = ndims
-         allocate( londimnames(ndims) )
+         if (.not. allocated(londimnames) ) allocate( londimnames(ndims) )
          do ndimid =  1,ndims
             rcode = nf90_inquire_dimension(ncid, dimids(ndimid), londimnames(ndimid), len)
             call shr_ncread_handleErr( rcode, subname &
@@ -220,7 +218,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
          call get_latlonindices( latitude=.true., dimnames=latdimnames, ndims=nlatdims, &
                                  nlen=latlen, strt=strt, cnt=cnt )
          nlat = latlen
-         allocate(lats(nlat))
+         if (.not. allocated(lats) ) allocate( lats(nlat) )
          rcode= nf90_get_var(ncid, nvarid ,lats, start = strt, count = cnt)
          call shr_ncread_handleErr( rcode, subname &
                            //"ERROR: Cant read netcdf latitude" )
@@ -236,7 +234,7 @@ subroutine shr_scam_getCloseLatLonNC(ncid, targetLat,  targetLon, closeLat, clos
          call get_latlonindices( latitude=.false., ndims=nlondims, dimnames=londimnames, &
                                  nlen=lonlen, strt=strt, cnt=cnt )
          nlon = lonlen
-         allocate(lons(nlon))
+         if (.not. allocated(lons) ) allocate( lons(nlon) )
          rcode= nf90_get_var(ncid, nvarid ,lons, start = strt, count = cnt)
          call shr_ncread_handleErr( rcode, subname &
                            //"ERROR: Cant read netcdf longitude" )
@@ -299,8 +297,10 @@ end subroutine shr_scam_getCloseLatLonNC
 
 subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, closeLon, &
                                       closeLatIdx, closeLonIdx, found, rc )
-   use netcdf
-   use pio
+   use netcdf,         only: nf90_max_var_dims, nf90_open, nf90_nowrite, nf90_noerr
+   use netcdf,         only: nf90_get_var
+   use pio,            only: file_desc_t, PIO_BCAST_ERROR, pio_inquire, pio_inquire_variable, PIO_NOERR
+   use pio,            only: pio_inquire_dimension, pio_get_var, pio_seterrorhandling, PIO_INTERNAL_ERROR
    use shr_ncread_mod, only: shr_ncread_handleErr
    implicit none
 
@@ -430,7 +430,11 @@ subroutine shr_scam_getCloseLatLonPIO(pioid, targetLat,  targetLon, closeLat, cl
      islatitude=.false. ! if spectral element lat and lon
                         !   are on same array structure
      is_segrid=.true.
-   else
+   else if ( latlen==lonlen ) then
+     islatitude=.false. ! if spectral element lat and lon
+                        !   are on same array structure
+     is_segrid=.true.
+  else
      islatitude=.true.
      is_segrid=.false.
    endif
@@ -525,7 +529,7 @@ subroutine shr_scam_getCloseLatLonFile(filename, targetLat,  targetLon, closeLat
                                        closeLatIdx, closeLonIdx, found, rc)
 ! !USES:
    use shr_ncread_mod, only: shr_ncread_open, shr_ncread_close
-   use netcdf
+   use netcdf, only : nf90_noerr
    implicit none
 
 ! !INPUT/OUTPUT PARAMETERS:
@@ -571,176 +575,6 @@ subroutine shr_scam_getCloseLatLonFile(filename, targetLat,  targetLon, closeLat
 
 end subroutine shr_scam_getCloseLatLonFile
 
-
-!===============================================================================
-!BOP ===========================================================================
-!
-! !IROUTINE: shr_scam_checkSurface
-!
-! !DESCRIPTION:
-!    routine to check grid fraction from the focndomain dataset
-!    and provide information to correctly flag land, ocean or ice for
-!    single column mode
-!
-! !REVISION HISTORY:
-!     2007 Aug 29 - J. Truesdale - first version
-!
-! !INTERFACE: ------------------------------------------------------------------
-
-subroutine shr_scam_checkSurface(scmlon, scmlat, iop_mode, ocn_compid, ocn_mpicom, &
-     lnd_present, sno_present, ocn_present, ice_present, &
-     rof_present, flood_present, rofice_present)
-
-! !USES:
-   use shr_dmodel_mod    ! shr data model stuff
-   use mct_mod
-   use netcdf
-   use shr_strdata_mod, only : shr_strdata_readnml, shr_strdata_type
-   implicit none
-
-! !INPUT/OUTPUT PARAMETERS:
-
-   real(R8),                     intent(in)  :: scmlon,scmlat ! single column lat lon
-   logical,                      intent(in)  :: iop_mode     ! iop mode logical
-   integer(IN),                  intent(in)  :: ocn_compid   ! id for ocean model
-   integer(IN),                  intent(in)  :: ocn_mpicom   ! mpi communicator for ocean
-   logical,            optional, intent(inout) :: lnd_present  ! land point
-   logical,            optional, intent(inout) :: sno_present  ! land doing sno
-   logical,            optional, intent(inout) :: ice_present  ! ice point
-   logical,            optional, intent(inout) :: ocn_present  ! ocean point
-   logical,            optional, intent(inout) :: rof_present  ! land point with rof
-   logical,            optional, intent(inout) :: flood_present  ! rof doing flood
-   logical,            optional, intent(inout) :: rofice_present ! land point with rof
-
-!EOP
-
-   !----- local variables -----
-   type(shr_strdata_type)  :: SCAMSDAT
-   integer(IN)             :: rcode            ! error code
-   integer(IN)             :: ncid_ocn         ! netcdf id for ocn_in
-   integer(IN)             :: fracid           !  id for frac variable
-   integer(IN)             :: closeLatIdx      ! index of returned lat point
-   integer(IN)             :: closeLonIdx      ! index of returned lon point
-   integer(IN)             :: unitn            ! io unit
-   real   (R8)             :: ocn_frac(1,1)    ! ocean fraction
-   real   (R8)             :: closeLat         ! returned close lat
-   real   (R8)             :: closeLon         ! returned close lon
-   character(len=CL)       :: nrevsn = ' '     ! full path restart file for branch
-   character(len=CL)       :: rest_pfile = './rpointer.dom' ! restart pointer file
-   character(len=CL)       :: bndtvs           ! sst file
-   character(len=CL)       :: focndomain       ! ocn domain file
-   logical                 :: sstcyc           ! flag for sst cycling
-   logical                 :: docn_exists           ! flag if file exists locally
-   logical                 :: ocn_exists            ! flag if file exists locally
-   logical                 :: exists            ! flag if file exists locally
-
-   ! Whether the grid point is over ocn or land (or both).
-   logical                 :: ocn_point
-   logical                 :: lnd_point
-
-   !----- formats -----
-   character(*),parameter :: subname = "(shr_scam_checkSurface) "
-   character(*),parameter :: F00   = "('(shr_scam_checkSurface) ',8a)"
-   character(len=CL)      :: decomp = '1d' ! restart pointer file
-   real(r8)               :: sst_constant_value 
-   character(len=CL)      :: restfilm = 'unset'
-   character(len=CL)      :: restfils = 'unset'
-   integer(IN)   :: nfrac
-   logical :: force_prognostic_true = .false.
-   namelist /dom_inparm/ sstcyc, nrevsn, rest_pfile, bndtvs, focndomain
-   namelist / docn_nml / decomp, sst_constant_value, force_prognostic_true, &
-        restfilm, restfils
-
-!-------------------------------------------------------------------------------
-! Notes:
-!-------------------------------------------------------------------------------
-
-   inquire( file='ocn_in', exist=ocn_exists )
-   inquire( file='docn_in', exist=docn_exists )
-   if (ocn_exists) then
-      !--- read in the ocn_in namelist to get name for focndomain file
-
-      unitn = shr_file_getUnit() ! get an unused unit number
-      open( unitn, file='ocn_in', status='old' )
-      rcode = 1
-      do while ( rcode /= 0 )
-         read(unitn, dom_inparm, iostat=rcode)
-         if (rcode < 0) then
-            call shr_sys_abort( 'shr_scam_checkSurface encountered end-of-file on namelist read' )
-         endif
-      end do
-      close( unitn )
-      call shr_file_freeUnit(unitn)
-
-      !--- open the netcdf file ---
-
-      inquire(file=trim(focndomain),exist=exists)
-      if (.not.exists) call shr_sys_abort(subName//"ERROR: file does not exist: "//trim(focndomain))
-      rcode = nf90_open(focndomain,nf90_nowrite,ncid_ocn)
-      if (rCode /= nf90_noerr) call shr_sys_abort(subName//"ERROR opening data file : "//trim(focndomain))
-      if (s_loglev > 0) write(s_logunit,F00) 'opened netCDF data file: ',trim(focndomain)
-
-      !--- Extract the fraction for current column ---
-
-      call shr_scam_getCloseLatLon(ncid_ocn,scmlat,scmlon,closelat,closelon,closelatidx,closelonidx)
-      rcode = nf90_inq_varid(ncid_ocn, 'frac', fracid)
-      if (rcode /= nf90_noerr) then
-         call shr_sys_abort(subname//"ERROR getting varid from variable frac in file "//trim(focndomain))
-      end if
-      rcode = nf90_get_var(ncid_ocn,fracid,ocn_frac,start=(/closelonidx,closelatidx/),count=(/1,1/))
-      if (rcode /= nf90_noerr) then
-         call shr_sys_abort(subname//"ERROR getting ocean fraction from "//trim(focndomain))
-      end if
-
-      !--- Set the appropriate surface flags based on ocean fraction.
-
-      ocn_point = (ocn_frac(1,1) > 0._r8)
-      lnd_point = (ocn_frac(1,1) < 1._r8)
-   else if (docn_exists) then
-      !--- read in the docn_in namelist to get name for focndomain file
-
-      unitn = shr_file_getUnit() ! get an unused unit number
-      open( unitn, file='docn_in', status='old' )
-      rcode = 1
-      do while ( rcode /= 0 )
-         read (unitn,nml=docn_nml,iostat=rcode)
-         if (rcode < 0) then
-            call shr_sys_abort( 'shr_scam_checkSurface encountered end-of-file on namelist read' )
-         endif
-      end do
-      close( unitn )
-      call shr_file_freeUnit(unitn)
-      call shr_strdata_readnml(SCAMSDAT,'docn_in')
-      call shr_dmodel_readgrid(SCAMSDAT%grid,SCAMSDAT%gsmap,SCAMSDAT%nxg,SCAMSDAT%nyg,SCAMSDAT%nzg, &
-           SCAMSDAT%domainfile, ocn_compid, ocn_mpicom, '2d1d', readfrac=.true., &
-           scmmode=.true.,iop_mode=iop_mode,scmlon=scmlon,scmlat=scmlat)
-      nfrac = mct_aVect_indexRA(SCAMSDAT%grid%data,'frac')
-
-      ocn_point = (SCAMSDAT%grid%data%rAttr(nfrac,1) > 0._r8)
-      lnd_point = (SCAMSDAT%grid%data%rAttr(nfrac,1) < 1._r8)
-      call mct_ggrid_clean(SCAMSDAT%grid)
-      call mct_gsmap_clean(SCAMSDAT%gsmap)
-   else
-   ! Exit early if no ocn component
-      ocn_point = .false.
-      lnd_point = .true.
-   end if
-
-   ! If land is on but point is not over land, turn it off.
-   if (present(lnd_present))   lnd_present   = lnd_present .and. lnd_point
-   if (present(sno_present))   sno_present   = sno_present .and. lnd_point
-
-   ! If ocean is on but point is not over ocean, turn it off.
-   if (present(ocn_present))   ocn_present   = ocn_present .and. ocn_point
-   if (present(ice_present))   ice_present   = ice_present .and. ocn_point
-
-   ! Always turn rof off.
-   if (present(rof_present))    rof_present   = .false.
-   if (present(flood_present))  flood_present = .false.
-   if (present(rofice_present)) rofice_present = .false.
-
-end subroutine shr_scam_checkSurface
-
 !===============================================================================
 !BOP ===========================================================================
 !
@@ -758,6 +592,8 @@ end subroutine shr_scam_checkSurface
 ! !INTERFACE: ------------------------------------------------------------------
 logical function is_latlon( var_name, latitude, varnotdim )
 ! !USES:
+  use shr_string_mod, only: shr_string_toLower
+
 ! !INPUT/OUTPUT PARAMETERS:
     implicit none
     character(len=*), intent(in) :: var_name  ! Input variable name
@@ -769,29 +605,26 @@ logical function is_latlon( var_name, latitude, varnotdim )
 
    !----- local variables -----
    character(len=3)  :: xyvar    ! Variable name for 2D x-y coordinate variables
-   character(len=3)  :: Capxyvar ! change xyvar to caps
    character(len=11) :: gcvar    ! Variable name for gridcell coordinate variables
+   character(len=CL) :: lowervar ! Lower case variable name
 !-------------------------------------------------------------------------------
 ! Notes:
 !-------------------------------------------------------------------------------
-
+    lowervar=shr_string_toLower(trim(var_name))
     is_latlon = .false.
     if ( latitude )then
       if ( varnotdim )then
          xyvar    = "yc"
-         Capxyvar = "YC"
          gcvar    = "grid1d_lat"
       else
          xyvar    = "nj"
-         Capxyvar = "NJ"
          gcvar    = "gridcell"
       end if
-      if ( trim(var_name) == 'lat'          .or. trim(var_name) == 'latixy'    .or. &
-           trim(var_name) == trim(xyvar)    .or. trim(var_name) == 'lsmlat'    .or. &
-           trim(var_name) == trim(gcvar)    .or.                                    &
-           trim(var_name) == 'LAT'          .or. trim(var_name) == 'LATIXY'    .or. &
-           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLAT'    .or. &
-           trim(var_name) == 'ncol')  then
+      if ( trim(lowervar) == 'lat'          .or. trim(lowervar) == 'latixy'    .or. &
+           trim(lowervar) == trim(xyvar)    .or. trim(lowervar) == 'lsmlat'    .or. &
+           trim(lowervar) == trim(gcvar)    .or. trim(lowervar) == 'lat_d'     .or. &
+           trim(lowervar) == 'ncol'         .or. trim(lowervar) == 'ncol_d'  &
+           )  then
            is_latlon = .true.
       else
            is_latlon = .false.
@@ -799,19 +632,15 @@ logical function is_latlon( var_name, latitude, varnotdim )
     else
       if ( varnotdim )then
          xyvar    = "xc"
-         Capxyvar = "XC"
          gcvar    = "grid1d_lon"
       else
          xyvar    = "ni"
-         Capxyvar = "NI"
          gcvar    = "gridcell"
       end if
-      if ( trim(var_name) == 'lon'          .or. trim(var_name) == 'longxy'    .or. &
-           trim(var_name) == trim(xyvar)    .or. trim(var_name) == 'lsmlon'    .or. &
-           trim(var_name) == trim(gcvar)    .or.                                    &
-           trim(var_name) == 'LON'          .or. trim(var_name) == 'LONGXY'    .or. &
-           trim(var_name) == trim(Capxyvar) .or. trim(var_name) == 'LSMLON'    .or. &
-           trim(var_name) == 'ncol')  then
+      if ( trim(lowervar) == 'lon'          .or. trim(lowervar) == 'longxy'    .or. &
+           trim(lowervar) == trim(xyvar)    .or. trim(lowervar) == 'lsmlon'    .or. &
+           trim(lowervar) == trim(gcvar)    .or. trim(lowervar) == 'lon_d'     .or. &
+           trim(lowervar) == 'ncol'         .or. trim(lowervar) == 'ncol_d' )  then
            is_latlon = .true.
       else
            is_latlon = .false.
@@ -855,10 +684,10 @@ subroutine get_latlonindices( latitude, ndims, dimnames, nlen, strt, cnt )
 !-------------------------------------------------------------------------------
 
    if ( ndims == 0 )then
-      call shr_sys_abort( subname//"ERROR: Could NOT find dimension")
+      call abort( subname//"ERROR: Could NOT find dimension")
    end if
    if ( nlen  == 0 )then
-      call shr_sys_abort( subname//"ERROR: Could NOT find dimension length")
+      call abort( subname//"ERROR: Could NOT find dimension length")
    end if
    do ndimid =  1, ndims
       !--- is this a lat/longitude dimension  ---
@@ -873,9 +702,9 @@ subroutine get_latlonindices( latitude, ndims, dimnames, nlen, strt, cnt )
    end do
    if (.not. found ) then
       if ( latitude )then
-         call shr_sys_abort( subname//"ERROR: Cant find a useable latitude dimension" )
+         call abort( subname//"ERROR: Cant find a useable latitude dimension" )
       else
-         call shr_sys_abort( subname//"ERROR: Cant find a useable longitude dimension")
+         call abort( subname//"ERROR: Cant find a useable longitude dimension")
       end if
    end if
 end subroutine get_latlonindices
@@ -933,7 +762,7 @@ subroutine get_close( targetlon, targetlat, nlon, lons, nlat, lats, closelonidx,
          found = .false.
          return
       else
-         call shr_sys_abort( subname//"ERROR: Couldnt find a longitude coordinate variable")
+         call abort( subname//"ERROR: Couldnt find a longitude coordinate variable")
       end if
    end if
    if (nlat == 0) then
@@ -942,7 +771,7 @@ subroutine get_close( targetlon, targetlat, nlon, lons, nlat, lats, closelonidx,
          found = .false.
          return
       else
-         call shr_sys_abort( subname//"ERROR: Couldnt find a latitude coordinate variable")
+         call abort( subname//"ERROR: Couldnt find a latitude coordinate variable")
       end if
    end if
    !--- Convert target latitude to within 0-360 ---
@@ -955,7 +784,7 @@ subroutine get_close( targetlon, targetlat, nlon, lons, nlat, lats, closelonidx,
          found = .false.
          return
       else
-         call shr_sys_abort( subname//"ERROR: target latitude out of reasonable range")
+         call abort( subname//"ERROR: target latitude out of reasonable range")
       end if
    end if
 
