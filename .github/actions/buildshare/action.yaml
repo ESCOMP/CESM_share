@@ -40,7 +40,7 @@ runs:
         mkdir build-share
         pushd build-share
         export ESMFMKFILE=${{ inputs.esmfmkfile }}
-        export PIO=${{ inputs.pio_path }}
+        export PIO_ROOT=${{ inputs.pio_path }}
         cmake ${{ inputs.cmake_flags }} ${{ inputs.src_root }}
         make VERBOSE=1
         popd
