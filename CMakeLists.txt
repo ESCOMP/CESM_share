@@ -42,9 +42,17 @@ endif()
 if (NOT DEFINED MPILIB OR NOT ${MPILIB} STREQUAL "mpi-serial")
   find_package(MPI REQUIRED)
 endif()
-set(CMAKE_MODULE_PATH "$ENV{NCAR_ROOT_ESMF}/cmake")
-find_package(ESMF REQUIRED)
+
+if (DEFINED ENV{ESMFMKFILE})
+  get_filename_component(ESMFLIB $ENV{ESMFMKFILE} DIRECTORY CACHE)
+endif()
+list(APPEND CMAKE_MODULE_PATH ${ESMFLIB}/../cmake)
+
+message("ESMF cmake is ${CMAKE_MODULE_PATH}")
+find_package(ESMF REQUIRED) 
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS}")
+
+
 
 if("${COMPILER}" STREQUAL "nag")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
@@ -56,7 +64,7 @@ include(${GENF90_PATH}/CMake/genf90_utils.cmake)
 process_genf90_source_list("${GENF90SOURCES}" ${CMAKE_CURRENT_BINARY_DIR} SHAREGENF90SRC)
 file(GLOB SOURCES "src/*.c" "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90" "RandNum/src/*/*.c")
 list(APPEND SOURCES "${SHAREGENF90SRC}")
-add_definitions(-DCPRINTEL)
+#add_definitions(-DCPRINTEL)
 
 add_library(share STATIC ${SOURCES})
 target_include_directories(share PRIVATE include RandNum/include)
