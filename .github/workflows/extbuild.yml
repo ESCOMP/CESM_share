@@ -69,7 +69,7 @@ jobs:
           pio_path: ${GITHUB_WORKSPACE}/pio
           src_root: ${GITHUB_WORKSPACE}
           cmake_flags: " -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON  -DCMAKE_Fortran_FLAGS=\"-DCPRGNU -g -Wall \
-          -ffree-form -ffree-line-length-none -fallow-argument-mismatch \""
+          -ffree-form -ffree-line-length-none -fallow-argument-mismatch\" -DCMAKE_MODULE_PATH=$ESMF_ROOT/cmake"
       - name: Test CDEPS
         run: |
           cd build-share
