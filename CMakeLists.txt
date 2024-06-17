@@ -46,7 +46,7 @@ endif()
 if (DEFINED ENV{ESMFMKFILE})
   get_filename_component(ESMFLIB $ENV{ESMFMKFILE} DIRECTORY CACHE)
 endif()
-list(APPEND CMAKE_MODULE_PATH ${ESMFLIB}/../cmake)
+list(APPEND CMAKE_MODULE_PATH ${ESMF_ROOT}/cmake)
 
 message("ESMF cmake is ${CMAKE_MODULE_PATH}")
 find_package(ESMF REQUIRED) 
