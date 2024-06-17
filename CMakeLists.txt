@@ -54,7 +54,7 @@ set(ENABLE_GENF90 ON)
 set(GENF90 "${GENF90_PATH}/genf90.pl")
 include(${GENF90_PATH}/CMake/genf90_utils.cmake)
 process_genf90_source_list("${GENF90SOURCES}" ${CMAKE_CURRENT_BINARY_DIR} SHAREGENF90SRC)
-file(GLOB SOURCES "src/*.c" "src/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90" "RandNum/src/*/*.c")
+file(GLOB SOURCES "src/*.c" "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90" "RandNum/src/*/*.c")
 list(APPEND SOURCES "${SHAREGENF90SRC}")
 add_definitions(-DCPRINTEL)
 
