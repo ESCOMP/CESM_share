@@ -55,7 +55,6 @@ if("${COMPILER}" STREQUAL "nag")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
 endif()
 set(GENF90SOURCES src/shr_assert_mod.F90 src/shr_frz_mod.F90 src/shr_infnan_mod.F90)
-#file(GLOB GENF90SOURCES "src/*.F90.in")
 set(ENABLE_GENF90 ON)
 
 #===== genf90 =====
@@ -76,9 +75,7 @@ else ()
   unset (SOURCE_DIR)
 endif ()
 
-
 set(GENF90 "${GENF90_PATH}/genf90.pl")
-#include(${GENF90_PATH}/cmake/genf90_utils.cmake)
 
 #===== Fortran Source Generation with GenF90 =====
 foreach (SRC_FILE IN LISTS GENF90SOURCES)
@@ -89,15 +86,12 @@ foreach (SRC_FILE IN LISTS GENF90SOURCES)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in genf90)
 endforeach ()
 
-#process_genf90_source_list("${GENF90SOURCES}" ${CMAKE_CURRENT_BINARY_DIR} SHAREGENF90SRC)
-
 file(GLOB SOURCES "src/*.c" "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90" "RandNum/src/*/*.c")
-#list(APPEND SOURCES "${SHAREGENF90SRC}")
-#add_definitions(-DCPRINTEL)
+
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 add_library(share STATIC ${SOURCES} ${SHAREGENF90SRC})
 add_dependencies (share genf90)
-target_include_directories(share PRIVATE include RandNum/include)
-#target_include_directories(share PRIVATE RandNum/include)
+target_include_directories(share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
+
 
 
