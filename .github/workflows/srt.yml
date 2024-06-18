@@ -44,14 +44,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install libxml2-utils pylint wget gfortran openmpi-bin netcdf-bin libopenmpi-dev cmake libnetcdf-dev pnetcdf-bin libpnetcdf-dev libnetcdff-dev
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
-      - name: pip install
-        run: pip install PyYAML
+#      - name: Set up Python ${{ matrix.python-version }}
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#          cache: 'pip'
+#
+#      - name: pip install
+#        run: pip install PyYAML
       - name: cesm checkout
         uses: actions/checkout@v4
         with:
