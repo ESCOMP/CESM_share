@@ -24,11 +24,6 @@ jobs:
     steps:
       - id: checkout-share
         uses: actions/checkout@v4
-      - id: checkout-genf90
-        uses: actions/checkout@v4
-        with:
-          path: ${GITHUB_WORKSPACE}/genf90
-          repository: PARALLELIO/genf90
       - id: load-env
         run: |
           sudo apt-get update
@@ -75,7 +70,7 @@ jobs:
           src_root: ${GITHUB_WORKSPACE}
           cmake_flags: " -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON  -DCMAKE_Fortran_FLAGS=\"-DCPRGNU -g -Wall \
           -ffree-form -ffree-line-length-none -fallow-argument-mismatch\" \
-          -DGENF90_PATH=${GITHUB_WORKSPACE}/genf90 -DCMAKE_MODULE_PATH=$ESMF_ROOT/cmake"
+          -DCMAKE_MODULE_PATH=$ESMF_ROOT/cmake"
       - name: Test CDEPS
         run: |
           cd build-share

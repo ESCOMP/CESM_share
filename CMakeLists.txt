@@ -54,16 +54,49 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS}")
 if("${COMPILER}" STREQUAL "nag")
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
 endif()
-file(GLOB GENF90SOURCES "src/*.F90.in")
+set(GENF90SOURCES src/shr_assert_mod.F90 src/shr_frz_mod.F90 src/shr_infnan_mod.F90)
+#file(GLOB GENF90SOURCES "src/*.F90.in")
 set(ENABLE_GENF90 ON)
-set(GENF90 "${GENF90_PATH}/genf90.pl")
-include(${CMAKE_SOURCE_DIR}/cmake/genf90_utils.cmake)
-process_genf90_source_list("${GENF90SOURCES}" ${CMAKE_CURRENT_BINARY_DIR} SHAREGENF90SRC)
-file(GLOB SOURCES "src/*.c" "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90" "RandNum/src/*/*.c")
-list(APPEND SOURCES "${SHAREGENF90SRC}")
-#add_definitions(-DCPRINTEL)
 
-add_library(share STATIC ${SOURCES})
+#===== genf90 =====
+if (DEFINED GENF90_PATH)
+  add_custom_target(genf90
+    DEPENDS ${GENF90_PATH}/genf90.pl)
+else ()
+  ExternalProject_Add (genf90
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
+    GIT_REPOSITORY https://github.com/PARALLELIO/genf90
+    GIT_TAG update_cmake_interface  
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND "")
+  ExternalProject_Get_Property (genf90 SOURCE_DIR)
+  set (GENF90_PATH ${SOURCE_DIR})
+  unset (SOURCE_DIR)
+endif ()
+
+
+set(GENF90 "${GENF90_PATH}/genf90.pl")
+#include(${GENF90_PATH}/cmake/genf90_utils.cmake)
+
+#===== Fortran Source Generation with GenF90 =====
+foreach (SRC_FILE IN LISTS GENF90SOURCES)
+  list(APPEND SHAREGENF90SRC ${SRC_FILE})
+  add_custom_command (OUTPUT ${SRC_FILE}
+    COMMAND ${GENF90_PATH}/genf90.pl
+    ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in > ${SRC_FILE}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in genf90)
+endforeach ()
+
+#process_genf90_source_list("${GENF90SOURCES}" ${CMAKE_CURRENT_BINARY_DIR} SHAREGENF90SRC)
+
+file(GLOB SOURCES "src/*.c" "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90" "RandNum/src/*/*.c")
+#list(APPEND SOURCES "${SHAREGENF90SRC}")
+#add_definitions(-DCPRINTEL)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
+add_library(share STATIC ${SOURCES} ${SHAREGENF90SRC})
+add_dependencies (share genf90)
 target_include_directories(share PRIVATE include RandNum/include)
 #target_include_directories(share PRIVATE RandNum/include)
 
