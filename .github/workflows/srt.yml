@@ -39,46 +39,10 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-
-      - name: cime checkout
-        uses: actions/checkout@v3
-        with:
-          repository: ESMCI/cime
-          submodules: True
-#      - name: genf90 checkout
-#        uses: actions/checkout@v2
-#        with:
-#          repository: PARALLELIO/genf90
-#          path: CIME/non_py/externals/genf90
-
-      - name: ccs_config checkout
-        uses: actions/checkout@v3
-        with:
-          repository: ESMCI/ccs_config_cesm
-          path: ccs_config
-
-      - name: share checkout
-        uses: actions/checkout@v3
-        with:
-          repository: ESCOMP/CESM_share
-          path: share
-
-      - name: cmeps checkout
-        uses: actions/checkout@v3
-        with:
-          repository: ESCOMP/CMEPS
-          path: components/cmeps
-
-      - name: cdeps checkout
-        uses: actions/checkout@v3
-        with:
-          repository: ESCOMP/CDEPS
-          path: components/cdeps
-
       - id: load-env
         run: |
           sudo apt-get update
-          sudo apt-get install libxml2-utils pylint wget gfortran openmpi-bin netcdf-bin libopenmpi-dev cmake libnetcdf-dev
+          sudo apt-get install libxml2-utils pylint wget gfortran openmpi-bin netcdf-bin libopenmpi-dev cmake libnetcdf-dev pnetcdf-bin pnetcdf-dev libnetcdff-dev
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -88,67 +52,40 @@ jobs:
 
       - name: pip install
         run: pip install PyYAML
-        
-      - name: mct install
-        run: |
-          git clone -b ${{ env.MCT_VERSION  }} https://github.com/MCSclimate/MCT libraries/mct
-          ls -l libraries/mct
-
-      - name: parallelio install
-        run: |
-          git clone -b ${{ env.PARALLELIO_VERSION  }} https://github.com/NCAR/ParallelIO libraries/parallelio
-          ls -l libraries/parallelio
-
-      - name: cache pnetcdf
-        id: cache-pnetcdf
-        uses: actions/cache@v3
+      - name: cesm checkout
+        uses: actions/checkout@v4
         with:
-          path: ~/pnetcdf
-          key: ${{ runner.os }}-${{ env.PNETCDF_VERSION}}-pnetcdf-redo
-
-      - name: pnetcdf build
-        if: steps.cache-pnetcdf.outputs.cache-hit != 'true'
+          repository: ESCOMP/CESM
+          path: cesm
+      - name: checkout submodules
         run: |
-          wget https://parallel-netcdf.github.io/Release/${{ env.PNETCDF_VERSION }}.tar.gz
-          tar -xzvf ${{ env.PNETCDF_VERSION }}.tar.gz
-          ls -l
-          pushd ${{ env.PNETCDF_VERSION }}
-          ./configure --prefix=$HOME/pnetcdf --enable-shared --disable-cxx
-          make
-          make install
+          pushd cesm
+          ./bin/git-fleximod update ccs_config cdeps mct parallelio
+          pushd ccs_config
+          git checkout main
           popd
-
-      - name: Cache netcdf-fortran
-        id: cache-netcdf-fortran
-        uses: actions/cache@v3
-        with:
-          path: ~/netcdf-fortran
-          key: ${{ runner.os }}-${{ env.NETCDF_FORTRAN_VERSION }}-netcdf-fortran-redo
-
-      - name: netcdf fortran build
-        if: steps.cache-netcdf-fortran.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get install libnetcdf-dev
-          wget https://github.com/Unidata/netcdf-fortran/archive/${{ env.NETCDF_FORTRAN_VERSION }}.tar.gz
-          tar -xzvf ${{ env.NETCDF_FORTRAN_VERSION }}.tar.gz
-          ls -l
-          pushd netcdf-fortran-*
-          ./configure --prefix=$HOME/netcdf-fortran
-          make
-          make install
-
-      - name: link netcdf-c to netcdf-fortran path
-        # link netcdf c library here to simplify build
-        run: |
-          pushd ${{ env.NETCDF_FORTRAN_PATH }}/include
-          ln -fs /usr/include/*netcdf* .
-          pushd ${{ env.NETCDF_FORTRAN_PATH }}/lib
-          clibdir=`nc-config --libdir`
-          ln -fs $clibdir/lib* .
+          git clone  https://github.com/ESMCI/cime
+          pushd cime
+          if [[ ! -e "${PWD}/.gitmodules.bak" ]]
+          then                                                                                                  
+              echo "Converting git@github.com to https://github.com urls in ${PWD}/.gitmodules"
+              sed -i".bak" "s/git@github.com:/https:\/\/github.com\//g" "${PWD}/.gitmodules"
+          fi                
+          git submodule update --init
+          popd
+          pushd components/cdeps
+          git checkout main
+          git submodule update --init
+          popd
+          popd
+      - name: share checkout
+        uses: actions/checkout@v4  
+        with: 
+          path: ~/cesm/share
 
       - name: Cache inputdata
         if: ${{ ! env.ACT }}
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: $HOME/cesm/inputdata
           key: inputdata
@@ -164,9 +101,6 @@ jobs:
           mkdir -p $HOME/cesm/inputdata
           cd $HOME/work/CESM_share/CESM_share
           ls -l $HOME/work/CESM_share/CESM_share
-          export NETCDF=$HOME/netcdf-fortran
-          export PATH=$NETCDF/bin:$PATH
-          export LD_LIBRARY_PATH=$NETCDF/lib:$HOME/pnetcdf/lib:$LD_LIBRARY_PATH
           python -m pip install pytest pytest-cov
           pytest -vvv --no-fortran-run --compiler gnu --mpilib openmpi --machine ubuntu-latest
 
