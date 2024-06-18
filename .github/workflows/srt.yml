@@ -101,8 +101,11 @@ jobs:
           mkdir -p $HOME/cesm/inputdata
           cd $HOME/work/CESM_share/CESM_share
           ls -l $HOME/work/CESM_share/CESM_share
-          python -m pip install pytest pytest-cov
-          pytest -vvv --no-fortran-run --compiler gnu --mpilib openmpi --machine ubuntu-latest
+          pushd $GITHUB_WORKSPACE/cesm/cime/CIME/tests
+          ./scripts_regression_tests.py  --no-fortran-run --compiler gnu --mpilib openmpi --machine ubuntu-latest 
+          popd
+#          python -m pip install pytest pytest-cov
+#          pytest -vvv --no-fortran-run --compiler gnu --mpilib openmpi --machine ubuntu-latest
 
 #     the following can be used by developers to login to the github server in case of errors
 #     see https://github.com/marketplace/actions/debugging-with-tmate for further details
