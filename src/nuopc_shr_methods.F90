@@ -82,7 +82,6 @@ contains
     logical          , intent(in) :: maintask
 
     ! local variables
-    integer :: ierr
 #ifdef CESMCOUPLED
     integer, external :: GPTLprint_memusage
 #endif
@@ -228,7 +227,7 @@ contains
     integer,          intent(inout)  :: rc
 
     ! local variables
-    integer           :: mytask, ierr, len
+    integer           :: mytask
     type(ESMF_VM)     :: vm
     type(ESMF_Field)  :: field
     real(r8), pointer :: farrayptr(:,:)
@@ -324,7 +323,7 @@ contains
     integer         , intent(out) :: rc
 
     ! local variables
-    integer                         :: i,j,n
+    integer                         :: n
     type(ESMf_Field)                :: lfield
     integer                         :: fieldCount, lrank
     character(ESMF_MAXSTR) ,pointer :: lfieldnamelist(:)
@@ -535,7 +534,6 @@ contains
     type(ESMF_Time)         :: NextAlarm        ! Next restart alarm time
     type(ESMF_TimeInterval) :: AlarmInterval    ! Alarm interval
     type(ESMF_TimeInterval) :: TimeStepInterval ! Component timestep interval
-    integer                 :: sec
     character(len=*), parameter :: subname = '(alarmInit): '
     !-------------------------------------------------------------------------------
 
