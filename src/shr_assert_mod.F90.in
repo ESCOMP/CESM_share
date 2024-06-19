@@ -81,8 +81,8 @@ subroutine shr_assert(var, msg, file, line)
 
   character(len=:), allocatable :: full_msg
 
+  full_msg = 'ERROR'
   if (.not. var) then
-     full_msg = 'ERROR'
      if (present(file)) then
         full_msg = full_msg // ' in ' // trim(file)
         if (present(line)) then
