@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 include(ExternalProject)
 include(FetchContent)
 
+option(WERROR "add the -Werror flag to compiler (works with gcc and intel)" OFF)
+
 if (DEFINED CIMEROOT)
   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
   include(${CASEROOT}/Macros.cmake)
@@ -92,6 +94,9 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 add_library(share STATIC ${SOURCES} ${SHAREGENF90SRC})
 add_dependencies (share genf90)
 target_include_directories(share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
+if(WERROR)
+   target_compile_options(${COMP} PRIVATE -Werror --warn-no-unused-dummy-argument --warn-no-missing-include-dirs)
+endif()
 
 
 
