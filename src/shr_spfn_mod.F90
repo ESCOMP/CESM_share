@@ -440,7 +440,7 @@ contains
   !  Latest modification: March 19, 1990
   !
   !------------------------------------------------------------------
-
+#ifndef HAVE_ERF_INTRINSICS
   SUBROUTINE CALERF_r8(ARG, RESULT, JINT)
 
     !------------------------------------------------------------------
@@ -752,7 +752,6 @@ contains
     END IF
 80  continue
   end SUBROUTINE CALERF_r4
-
   !------------------------------------------------------------------------------------------
 
   !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -988,6 +987,7 @@ contains
     gamma = res
     ! ---------- LAST LINE OF GAMMA ----------
   end function shr_spfn_gamma_nonintrinsic_r8
+#endif
 
   !! Incomplete Gamma function
   !!
