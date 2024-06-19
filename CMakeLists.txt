@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 include(ExternalProject)
 include(FetchContent)
 
-option(WERROR "add the -Werror flag to compiler (works with gcc and intel)" OFF)
+option(WERROR "add the -Werror flag to compiler (works with gnu)" OFF)
+enable_language(Fortran)
 
 if (DEFINED CIMEROOT)
   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
@@ -24,9 +25,18 @@ else()
   set(BLD_STANDALONE TRUE)
   project(SHARE LANGUAGES Fortran C VERSION 0.1)
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+  string (TOUPPER "${CMAKE_Fortran_COMPILER_ID}" CMAKE_Fortran_COMPILER_NAME)
+  if (CMAKE_Fortran_COMPILER_NAME STREQUAL "XL")
+    set (CMAKE_Fortran_COMPILER_NAME "IBM")
+  endif ()
+  if (CMAKE_Fortran_COMPILER_NAME STREQUAL "INTELLLVM")
+    set (CMAKE_Fortran_COMPILER_NAME "INTEL")
+  endif ()
+   
+  set (CMAKE_Fortran_COMPILER_DIRECTIVE "CPR${CMAKE_Fortran_COMPILER_NAME}"
+    CACHE STRING "Fortran compiler name preprocessor directive")
 endif()
-enable_language(Fortran)
-
+message("CMAKE_Fortran_COMPILER_DIRECTIVE is ${CMAKE_Fortran_COMPILER_DIRECTIVE}")
 option(WERROR "add the -Werror flag to compiler (works with gcc and intel)" OFF)
 
 if (DEFINED ENV{PIO_ROOT})
@@ -79,6 +89,7 @@ endif ()
 
 set(GENF90 "${GENF90_PATH}/genf90.pl")
 
+
 #===== Fortran Source Generation with GenF90 =====
 foreach (SRC_FILE IN LISTS GENF90SOURCES)
   list(APPEND SHAREGENF90SRC ${SRC_FILE})
@@ -88,15 +99,23 @@ foreach (SRC_FILE IN LISTS GENF90SOURCES)
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in genf90)
 endforeach ()
 
-file(GLOB SOURCES "src/*.c" "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90" "RandNum/src/*/*.c")
+file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
+file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
-add_library(share STATIC ${SOURCES} ${SHAREGENF90SRC})
+
+add_library(share STATIC ${CSOURCES} ${FSOURCES} ${SHAREGENF90SRC})
+
+if(WERROR)
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror --warn-no-unused-dummy-argument --warn-no-missing-include-dirs -ffree-line-length-none")
+
+   set_source_files_properties(src/shr_mpi_mod.F90 src/shr_reprosum_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error;-fallow-argument-mismatch")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=cpp")
+
+endif()
 add_dependencies (share genf90)
 target_include_directories(share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
-if(WERROR)
-   target_compile_options(${COMP} PRIVATE -Werror --warn-no-unused-dummy-argument --warn-no-missing-include-dirs)
-endif()
+target_compile_definitions (share PUBLIC ${CMAKE_Fortran_COMPILER_DIRECTIVE})
 
 
 
