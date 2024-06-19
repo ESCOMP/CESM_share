@@ -1,9 +1,31 @@
+cmake_minimum_required(VERSION 3.26)
+project(share)
+include(ExternalProject)
 set(genf90_files shr_infnan_mod.F90.in shr_assert_mod.F90.in)
+
+#===== genf90 =====
+if (DEFINED GENF90_PATH)
+  add_custom_target(genf90
+    DEPENDS ${GENF90_PATH}/genf90.pl)
+else ()
+  ExternalProject_Add (genf90
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
+    GIT_REPOSITORY https://github.com/PARALLELIO/genf90
+    GIT_TAG origin/update_cmake_interface
+    UPDATE_COMMAND git pull "https://github.com/PARALLELIO/genf90"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND "")
+  ExternalProject_Get_Property (genf90 SOURCE_DIR)
+  set (GENF90_PATH ${SOURCE_DIR})
+  unset (SOURCE_DIR)
+endif ()
+include(${GENF90_PATH}/CMake/genf90_utils.cmake)
 
 process_genf90_source_list("${genf90_files}" ${CMAKE_CURRENT_BINARY_DIR}
   share_genf90_sources)
 
-sourcelist_to_parent(share_genf90_sources)
+#sourcelist_to_parent(share_genf90_sources)
 
 list(APPEND share_sources "${share_genf90_sources}")
 
@@ -39,6 +61,8 @@ list(APPEND share_mct_sources
 list(APPEND share_pio_sources
   shr_pio_mod.F90)
 
-sourcelist_to_parent(share_sources)
-sourcelist_to_parent(share_mct_sources)
-sourcelist_to_parent(share_pio_sources)
+#sourcelist_to_parent(share_sources)
+#sourcelist_to_parent(share_mct_sources)
+#sourcelist_to_parent(share_pio_sources)
+add_library(share ${share_sources})
+add_dependencies (share genf90)
