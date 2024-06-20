@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: ${GITHUB_WORKSPACE}/pfunit
-          repository: https://github.com/Goddard-Fortran-Ecosystem/pFUnit
+          repository: Goddard-Fortran-Ecosystem/pFUnit
       - name: build PFUNIT
         run: |
           cd ${GITHUB_WORKSPACE}/pfunit
