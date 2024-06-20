@@ -102,8 +102,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: cime
-          ref: remove_esmf_wrf_timemanager
-          repository: jedwards4b/cime
+          ref: master
+          repository: ESMCI/cime
 
       - name: Checkout ccs_config
         uses: actions/checkout@v4
