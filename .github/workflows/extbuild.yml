@@ -115,6 +115,7 @@ jobs:
       - name: run unit testing
         run: |
           pushd cime
+          export CIME_MODEL=cesm
           mkdir ftest
           python ./scripts/fortran_unit_testing/run_tests.py --build-dir `pwd`/ftest --machine ubuntu-latest
 
