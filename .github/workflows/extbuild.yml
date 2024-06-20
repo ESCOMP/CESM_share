@@ -79,17 +79,17 @@ jobs:
       - name: Checkout PFUNIT
         uses: actions/checkout@v4
         with:
-          path: ${GITHUB_WORKSPACE}/pfunit
+          path: pfunit
           repository: Goddard-Fortran-Ecosystem/pFUnit
       - name: build PFUNIT
         run: |
-          cd ${GITHUB_WORKSPACE}/pfunit
+          pushd pfunit
           cmake -B build
           cmake --build build -DSKIP_MPI=YES -DSKIP_OPENMP=YES
-
+          popd
 #     the following can be used by developers to login to the github server in case of errors
 #     see https://github.com/marketplace/actions/debugging-with-tmate for further details
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+#      - name: Setup tmate session
+#        if: ${{ failure() }}
+#        uses: mxschmitt/action-tmate@v3
       
