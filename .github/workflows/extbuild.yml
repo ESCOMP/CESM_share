@@ -75,3 +75,16 @@ jobs:
         run: |
           cd build-share
           make VERBOSE=1
+
+      - name: Checkout PFUNIT
+        uses: actions/checkout@v4
+        with:
+          path: ${GITHUB_WORKSPACE}/pfunit
+          repository: https://github.com/Goddard-Fortran-Ecosystem/pFUnit
+      - name: build PFUNIT
+        run: |
+          cd ${GITHUB_WORKSPACE}/pfunit
+          cmake -B build
+          cmake --build build -DSKIP_MPI=YES -DSKIP_OPENMP=YES
+
+      
