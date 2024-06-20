@@ -116,9 +116,8 @@ jobs:
         run: |
           pushd cime
           export CIME_MODEL=cesm
-          export PFUNIT_PATH=$GITHUB_WORKSPACE/build
           mkdir ftest
-          python ./scripts/fortran_unit_testing/run_tests.py --build-dir `pwd`/ftest --machine ubuntu-latest
+          python ./scripts/fortran_unit_testing/run_tests.py --build-dir `pwd`/ftest --machine ubuntu-latest --cmake-args "-DPFUNIT_PATH=$GITHUB_WORKSPACE/pfunit/build"    
 
 #     the following can be used by developers to login to the github server in case of errors
 #     see https://github.com/marketplace/actions/debugging-with-tmate for further details
