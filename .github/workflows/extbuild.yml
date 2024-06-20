@@ -77,24 +77,26 @@ jobs:
           cd build-share
           make VERBOSE=1
 
-      - name: Checkout PFUNIT
-        uses: actions/checkout@v4
-        with:
-          path: pfunit
-          ref: ${{ env.PFUNIT_VERSION }}
-          repository: Goddard-Fortran-Ecosystem/pFUnit
-      - name: build PFUNIT
-        run: |
-          pushd pfunit
-          cmake -DSKIP_MPI=YES -DSKIP_OPENMP=YES -B build
-          cmake --build build 
-          popd
       - name: Cache PFUNIT
         id: cache-pfunit
         uses: actions/cache@v4
         with:
           path: pfunit
           key: ${{ runner.os }}-${{ env.PFUNIT_VERSION }}
+      - name: Checkout PFUNIT
+        if: steps.cache-pfunit.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          path: pfunit
+          ref: ${{ env.PFUNIT_VERSION }}
+          repository: Goddard-Fortran-Ecosystem/pFUnit
+      - name: build PFUNIT
+        if: steps.cache-pfunit.outputs.cache-hit != 'true'
+        run: |
+          pushd pfunit
+          cmake -DSKIP_MPI=YES -DSKIP_OPENMP=YES -B build
+          cmake --build build 
+          popd
 
       - name: Checkout cime
         uses: actions/checkout@v4
@@ -107,7 +109,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: ccs_config
-          ref: master
+          ref: main
           repository: ESMCI/ccs_config_cesm
 
       - name: run unit testing
