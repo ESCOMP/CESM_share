@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: pfunit
-          ref: ${PFUNIT_VERSION}
+          ref: ${{ env.PFUNIT_VERSION }}
           repository: Goddard-Fortran-Ecosystem/pFUnit
       - name: build PFUNIT
         run: |
