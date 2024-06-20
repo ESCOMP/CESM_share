@@ -18,12 +18,6 @@ set(sources_needed
 
 extract_sources("${sources_needed}" "${share_sources}" test_sources)
 
-# shr_cal_mod depends on the esmf wrf time manager. So we need to add
-# those sources to the list, too. (We can't build those into a separate
-# library because they depend on shr_sys_mod - i.e., there are circular
-# dependencies.)
-list(APPEND test_sources ${esmf_wrf_timemgr_sources})
-
 # This is needed to make ESMF_Stubs.F90 avoid pulling in mpi
 add_definitions(-DHIDE_MPI)
 

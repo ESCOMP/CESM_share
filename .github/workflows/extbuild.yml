@@ -114,6 +114,8 @@ jobs:
 
       - name: run unit testing
         run: |
+          # this line is to satisfy the config_files.xml path structure
+          ln -fs ../ share
           pushd cime
           export CIME_MODEL=cesm
           mkdir ftest
