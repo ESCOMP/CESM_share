@@ -118,14 +118,14 @@ jobs:
           ln -fs ../../ share
           pushd cime
           export CIME_MODEL=cesm
-          export NetCDF_DIR=/usr
+          export NetCDF_ROOT=/usr
           mkdir ftest
           cat ../ccs_config/machines/cmake_macros/ubuntu-latest.cmake
           python ./scripts/fortran_unit_testing/run_tests.py --build-dir `pwd`/ftest --machine ubuntu-latest
 
 #     the following can be used by developers to login to the github server in case of errors
 #     see https://github.com/marketplace/actions/debugging-with-tmate for further details
-#      - name: Setup tmate session
-#        if: ${{ failure() }}
-#        uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
       
