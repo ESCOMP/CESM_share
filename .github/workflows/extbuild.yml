@@ -110,11 +110,11 @@ jobs:
           ref: master
           repository: ESMCI/ccs_config_cesm
 
-      -name: run unit testing
-        run:|
-        pushd cime
-        mkdir ftest
-        python ./scripts/fortran_unit_testing/run_tests.py --build-dir `pwd`/ftest --machine ubuntu-latest
+      - name: run unit testing
+        run: |
+          pushd cime
+          mkdir ftest
+          python ./scripts/fortran_unit_testing/run_tests.py --build-dir `pwd`/ftest --machine ubuntu-latest
 
 #     the following can be used by developers to login to the github server in case of errors
 #     see https://github.com/marketplace/actions/debugging-with-tmate for further details
