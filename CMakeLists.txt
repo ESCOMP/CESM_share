@@ -130,8 +130,7 @@ endforeach ()
  if(UNITTESTS)
    find_package(PFUNIT REQUIRED)         
    # need to turn the warning check off for pfunit
-   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ")    
-   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ -L${ESMF_PIO_LIBPATH} -L${ESMF_INSTALL_PREFIX}/${ESMF_INSTALL_LIBDIR}")
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ -L${ESMF_PIO_LIBPATH} -L${ESMF_INSTALL_PREFIX}/${ESMF_INSTALL_LIBDIR}")
    add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
    add_subdirectory(${CMAKE_SOURCE_DIR}/test/unit ${CMAKE_BINARY_DIR}/unittests)
    
