@@ -16,6 +16,11 @@ inputs:
     default: $HOME/ESMF/lib/libg/Linux.gfortran.64.openmpi.default/esmf.mk 
     required: False
     type: string
+  pfunit_root:
+    description: 'Path to installed pfunit library'
+    default: $GITHUB_WORKSPACE/pfunit
+    required: False
+    type: string
   src_root:
     description: 'Path to share source'
     default: $GITHUB_WORKSPACE
@@ -39,6 +44,7 @@ runs:
       run: |
         mkdir build-share
         pushd build-share
+        export PFUNIT_ROOT=${{ inputs.pfunit_root }}
         export ESMFMKFILE=${{ inputs.esmfmkfile }}
         export PIO_ROOT=${{ inputs.pio_path }}
         cmake ${{ inputs.cmake_flags }} ${{ inputs.src_root }}
