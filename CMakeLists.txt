@@ -8,7 +8,7 @@ include(FetchContent)
  option(UNITTESTS "build the pfunit based tests (must have PFUNIT_ROOT)" OFF)
  enable_language(Fortran)
  set(ENABLE_GENF90 ON)
- 
+
 # if (DEFINED CIMEROOT)
 #   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
 #   include(${CASEROOT}/Macros.cmake)
@@ -40,7 +40,7 @@ include(FetchContent)
     ExternalProject_Add (genf90
       PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
       GIT_REPOSITORY https://github.com/PARALLELIO/genf90
-      GIT_TAG update_cmake_interface  
+      GIT_TAG update_cmake_interface
       UPDATE_COMMAND ""
       CONFIGURE_COMMAND ""
       BUILD_COMMAND ""
@@ -51,7 +51,7 @@ include(FetchContent)
   endif ()
 
    set(GENF90 "${GENF90_PATH}/genf90.pl")
-   
+
 
    string (TOUPPER "${CMAKE_Fortran_COMPILER_ID}" CMAKE_Fortran_COMPILER_NAME)
    if (CMAKE_Fortran_COMPILER_NAME STREQUAL "XL")
@@ -66,7 +66,7 @@ include(FetchContent)
  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_BINARY_DIR}")
 
  add_subdirectory(src)
-   
+
  if (DEFINED ENV{PIO_ROOT})
    message("PIO_ROOT is $ENV{PIO_ROOT}")
  else()
@@ -85,10 +85,10 @@ include(FetchContent)
  if (DEFINED ENV{ESMF_ROOT})
    list(APPEND CMAKE_MODULE_PATH $ENV{ESMF_ROOT}/cmake)
  endif()
- message("ESMF cmake is ${CMAKE_MODULE_PATH}")
- find_package(ESMF REQUIRED) 
+
+ find_package(ESMF REQUIRED)
  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS} ")
- link_libraries("-L${ESMF_PIO_LIBPATH} -L${ESMF_INSTALL_PREFIX}/${ESMF_INSTALL_LIBDIR}")
+ link_libraries("-L${PIO_ROOT}/lib -L${ESMF_LIBSDIR}")
 
 
  if("${COMPILER}" STREQUAL "nag")
@@ -106,7 +106,7 @@ foreach (SRC_FILE IN LISTS GENF90SOURCES)
     ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in > ${SRC_FILE}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in genf90)
 endforeach ()
- 
+
  file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
  file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
 
@@ -122,18 +122,16 @@ endforeach ()
     set_source_files_properties(src/shr_assert_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=maybe-uninitialized")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=cpp")
     set_source_files_properties(src/shr_cal_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion")
-       
+
  endif()
  add_dependencies (csm_share genf90)
  target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
 
  if(UNITTESTS)
-   find_package(PFUNIT REQUIRED)         
+   find_package(PFUNIT REQUIRED)
    # need to turn the warning check off for pfunit
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ ")
    add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
    add_subdirectory(${CMAKE_SOURCE_DIR}/test/unit ${CMAKE_BINARY_DIR}/unittests)
-   
+
 endif()
-
-
