@@ -122,13 +122,15 @@ endforeach ()
     set_source_files_properties(src/shr_assert_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=maybe-uninitialized")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=cpp")
     set_source_files_properties(src/shr_cal_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion")
-   
+       
  endif()
  add_dependencies (csm_share genf90)
  target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
 
  if(UNITTESTS)
    find_package(PFUNIT REQUIRED)         
+   # need to turn the warning check off for pfunit
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error ")    
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ -L${ESMF_PIO_LIBPATH} -L${ESMF_INSTALL_PREFIX}/${ESMF_INSTALL_LIBDIR}")
    add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
    add_subdirectory(${CMAKE_SOURCE_DIR}/test/unit ${CMAKE_BINARY_DIR}/unittests)
