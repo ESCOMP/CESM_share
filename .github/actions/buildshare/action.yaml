@@ -45,7 +45,7 @@ runs:
         mkdir build-share
         pushd build-share
         # this is machine specific
-        export LDFLAGS="-L/usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff -lpnetcdf -Wl,--unresolved-symbols=ignore-in-object-files"
+        export LDFLAGS="-L/usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff -lpnetcdf -Wl,--unresolved-symbols=ignore-all"
         export PFUNIT_DIR=${{ inputs.pfunit_root }}/build
         export ESMFMKFILE=${{ inputs.esmfmkfile }}
         export PIO_ROOT=${{ inputs.pio_path }}
