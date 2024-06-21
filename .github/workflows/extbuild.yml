@@ -92,7 +92,7 @@ jobs:
           pio_path: ${GITHUB_WORKSPACE}/pio
           src_root: ${GITHUB_WORKSPACE}
           pfunit_root: ${GITHUB_WORKSPACE}/pfunit
-          cmake_flags: " -DUNITTESTS=ON -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON  -DCMAKE_Fortran_FLAGS=\"-DCPRGNU -g -Wall \
+          cmake_flags: " -DUNITTESTS=ON -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON  -DCMAKE_Fortran_FLAGS=\" -g -Wall \
           -ffree-form -ffree-line-length-none -fallow-argument-mismatch\" \
           -DCMAKE_MODULE_PATH=$ESMF_ROOT/cmake"
       - name: Test share
