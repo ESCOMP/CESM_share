@@ -88,7 +88,7 @@ include(FetchContent)
 
  find_package(ESMF REQUIRED)
  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS} ")
- link_libraries("-L${PIO_ROOT}/lib -L${ESMF_LIBSDIR}")
+ link_libraries("-L$ENV{PIO_ROOT}/lib -L${ESMF_LIBSDIR}")
 
 
  if("${COMPILER}" STREQUAL "nag")
