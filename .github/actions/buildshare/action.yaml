@@ -44,7 +44,7 @@ runs:
       run: |
         mkdir build-share
         pushd build-share
-        export PFUNIT_DIR=${{ inputs.pfunit_root }}/cmake
+        export PFUNIT_DIR=${{ inputs.pfunit_root }}/build
         export ESMFMKFILE=${{ inputs.esmfmkfile }}
         export PIO_ROOT=${{ inputs.pio_path }}
         cmake ${{ inputs.cmake_flags }} ${{ inputs.src_root }}
