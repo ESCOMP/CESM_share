@@ -123,7 +123,7 @@ SUBROUTINE shr_sys_chdir(path, rcode)
 !-------------------------------------------------------------------------------
 ! PURPOSE: an architecture independent system call
 !-------------------------------------------------------------------------------
-
+   rcode = 0
    lenpath=len_trim(path)
 
 #if (defined AIX)
