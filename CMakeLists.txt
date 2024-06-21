@@ -2,92 +2,103 @@ cmake_minimum_required(VERSION 3.10)
 include(ExternalProject)
 include(FetchContent)
 
-option(WERROR "add the -Werror flag to compiler (works with gnu)" OFF)
-enable_language(Fortran)
-
-if (DEFINED CIMEROOT)
-  message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
-  include(${CASEROOT}/Macros.cmake)
-  if (${PIO_VERSION} LESS 2)
-    message( FATAL_ERROR "Version 2 of the PIO library required")
-  endif()
-  if (MPILIB STREQUAL mpi-serial)
-    set(CMAKE_Fortran_COMPILER ${SFC})
-    set(CMAKE_C_COMPILER ${SCC})
-  else()
-    set(CMAKE_Fortran_COMPILER ${MPIFC})
-    set(CMAKE_C_COMPILER ${MPICC})
-  endif()
-  set(CMAKE_Fortran_FLAGS "${FFLAGS} ${CPPDEFS} -I${LIBROOT}/include -I${LIBROOT}/nuopc/esmf/${NINST_VALUE}/include")
-  add_compile_definitions(CESMCOUPLED)
-  list(APPEND CMAKE_MODULE_PATH ${SRC_ROOT}/cime/CIME/non_py/src/CMake)
-else()
-  set(BLD_STANDALONE TRUE)
-  project(SHARE LANGUAGES Fortran C VERSION 0.1)
-  list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-  string (TOUPPER "${CMAKE_Fortran_COMPILER_ID}" CMAKE_Fortran_COMPILER_NAME)
-  if (CMAKE_Fortran_COMPILER_NAME STREQUAL "XL")
-    set (CMAKE_Fortran_COMPILER_NAME "IBM")
-  endif ()
-  if (CMAKE_Fortran_COMPILER_NAME STREQUAL "INTELLLVM")
-    set (CMAKE_Fortran_COMPILER_NAME "INTEL")
-  endif ()
-   
-  set (CMAKE_Fortran_COMPILER_DIRECTIVE "CPR${CMAKE_Fortran_COMPILER_NAME}"
-    CACHE STRING "Fortran compiler name preprocessor directive")
-endif()
-message("CMAKE_Fortran_COMPILER_DIRECTIVE is ${CMAKE_Fortran_COMPILER_DIRECTIVE}")
-option(WERROR "add the -Werror flag to compiler (works with gcc and intel)" OFF)
-
-if (DEFINED ENV{PIO_ROOT})
-  message("PIO_ROOT is $ENV{PIO_ROOT}")
-else()
-  if (DEFINED PIO)
-    set(PIO_PATH ${PIO})
-  else()
-    set(PIO_PATH $ENV{PIO})
-  endif()
-  find_package(PIO REQUIRED COMPONENT C Fortran PATH ${PIO_PATH})
-endif()
-
-if (NOT DEFINED MPILIB OR NOT ${MPILIB} STREQUAL "mpi-serial")
-  find_package(MPI REQUIRED)
-endif()
-
-if (DEFINED ENV{ESMF_ROOT})
-  list(APPEND CMAKE_MODULE_PATH $ENV{ESMF_ROOT}/cmake)
-endif()
-message("ESMF cmake is ${CMAKE_MODULE_PATH}")
-find_package(ESMF REQUIRED) 
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS}")
 
 
-
-if("${COMPILER}" STREQUAL "nag")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
-endif()
-set(GENF90SOURCES src/shr_assert_mod.F90 src/shr_frz_mod.F90 src/shr_infnan_mod.F90)
-set(ENABLE_GENF90 ON)
-
+ option(WERROR "add the -Werror flag to compiler (works with gnu)" OFF)
+ option(UNITTESTS "build the pfunit based tests (must have PFUNIT_ROOT)" OFF)
+ enable_language(Fortran)
+ set(ENABLE_GENF90 ON)
+ 
+# if (DEFINED CIMEROOT)
+#   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
+#   include(${CASEROOT}/Macros.cmake)
+#   if (${PIO_VERSION} LESS 2)
+#     message( FATAL_ERROR "Version 2 of the PIO library required")
+#   endif()
+#   if (MPILIB STREQUAL mpi-serial)
+#     set(CMAKE_Fortran_COMPILER ${SFC})
+#     set(CMAKE_C_COMPILER ${SCC})
+#   else()
+#     set(CMAKE_Fortran_COMPILER ${MPIFC})
+#     set(CMAKE_C_COMPILER ${MPICC})
+#   endif()
+#   set(CMAKE_Fortran_FLAGS "${FFLAGS} ${CPPDEFS} -I${LIBROOT}/include -I${LIBROOT}/nuopc/esmf/${NINST_VALUE}/include")
+#   add_compile_definitions(CESMCOUPLED)
+#   list(APPEND CMAKE_MODULE_PATH ${SRC_ROOT}/cime/CIME/non_py/src/CMake)
+# else()
+#   set(BLD_STANDALONE TRUE)
+   project(SHARE LANGUAGES Fortran C VERSION 0.1)
+   list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+   include(Sourcelist_utils)
+   include(Compilers)
+   include(genf90_utils)
 #===== genf90 =====
-if (DEFINED GENF90_PATH)
-  add_custom_target(genf90
-    DEPENDS ${GENF90_PATH}/genf90.pl)
-else ()
-  ExternalProject_Add (genf90
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
-    GIT_REPOSITORY https://github.com/PARALLELIO/genf90
-    GIT_TAG update_cmake_interface  
-    UPDATE_COMMAND ""
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND "")
-  ExternalProject_Get_Property (genf90 SOURCE_DIR)
-  set (GENF90_PATH ${SOURCE_DIR})
-  unset (SOURCE_DIR)
-endif ()
+  if (DEFINED GENF90_PATH)
+    add_custom_target(genf90
+      DEPENDS ${GENF90_PATH}/genf90.pl)
+  else ()
+    ExternalProject_Add (genf90
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
+      GIT_REPOSITORY https://github.com/PARALLELIO/genf90
+      GIT_TAG update_cmake_interface  
+      UPDATE_COMMAND ""
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND "")
+    ExternalProject_Get_Property (genf90 SOURCE_DIR)
+    set (GENF90_PATH ${SOURCE_DIR})
+    unset (SOURCE_DIR)
+  endif ()
 
-set(GENF90 "${GENF90_PATH}/genf90.pl")
+   set(GENF90 "${GENF90_PATH}/genf90.pl")
+   
+
+   string (TOUPPER "${CMAKE_Fortran_COMPILER_ID}" CMAKE_Fortran_COMPILER_NAME)
+   if (CMAKE_Fortran_COMPILER_NAME STREQUAL "XL")
+     set (CMAKE_Fortran_COMPILER_NAME "IBM")
+   endif ()
+   if (CMAKE_Fortran_COMPILER_NAME STREQUAL "INTELLLVM")
+     set (CMAKE_Fortran_COMPILER_NAME "INTEL")
+   endif ()
+   set (CMAKE_Fortran_COMPILER_DIRECTIVE "-DCPR${CMAKE_Fortran_COMPILER_NAME}"
+       CACHE STRING "Fortran compiler name preprocessor directive")
+     message("CMAKE_Fortran_COMPILER_DIRECTIVE is ${CMAKE_Fortran_COMPILER_DIRECTIVE}")
+ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_BINARY_DIR}")
+
+ add_subdirectory(src)
+   
+
+
+
+# if (DEFINED ENV{PIO_ROOT})
+#   message("PIO_ROOT is $ENV{PIO_ROOT}")
+# else()
+#   if (DEFINED PIO)
+#     set(PIO_PATH ${PIO})
+#   else()
+#     set(PIO_PATH $ENV{PIO})
+#   endif()
+#   find_package(PIO REQUIRED COMPONENT C Fortran PATH ${PIO_PATH})
+# endif()
+
+# if (NOT DEFINED MPILIB OR NOT ${MPILIB} STREQUAL "mpi-serial")
+#   find_package(MPI REQUIRED)
+# endif()
+
+# if (DEFINED ENV{ESMF_ROOT})
+#   list(APPEND CMAKE_MODULE_PATH $ENV{ESMF_ROOT}/cmake)
+# endif()
+# message("ESMF cmake is ${CMAKE_MODULE_PATH}")
+# find_package(ESMF REQUIRED) 
+# set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS}")
+
+
+
+ if("${COMPILER}" STREQUAL "nag")
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
+ endif()
+ set(GENF90SOURCES src/shr_assert_mod.F90 src/shr_frz_mod.F90 src/shr_infnan_mod.F90)
+
 
 
 #===== Fortran Source Generation with GenF90 =====
@@ -98,27 +109,33 @@ foreach (SRC_FILE IN LISTS GENF90SOURCES)
     ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in > ${SRC_FILE}
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in genf90)
 endforeach ()
+ 
+ file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
+ file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
 
-file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
-file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
+ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
+ add_library(csm_share STATIC ${CSOURCES} ${FSOURCES} ${SHAREGENF90SRC} )
 
-add_library(share STATIC ${CSOURCES} ${FSOURCES} ${SHAREGENF90SRC})
+# if(WERROR)
+#    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror --warn-no-unused-dummy-argument --warn-no-missing-include-dirs -ffree-line-length-none")
 
-if(WERROR)
-   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror --warn-no-unused-dummy-argument --warn-no-missing-include-dirs -ffree-line-length-none")
+#    set_source_files_properties(src/shr_mpi_mod.F90 src/shr_reprosum_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error;-fallow-argument-mismatch")
+#    # This flag seems to be needed for temp variables generated by the compiler version in jammy
+#    set_source_files_properties(src/shr_assert_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=maybe-uninitialized")
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=cpp")
+#    set_source_files_properties(src/shr_cal_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion")
+   
+# endif()
+ add_dependencies (csm_share genf90)
+ target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
 
-   set_source_files_properties(src/shr_mpi_mod.F90 src/shr_reprosum_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error;-fallow-argument-mismatch")
-   # This flag seems to be needed for temp variables generated by the compiler version in jammy
-   set_source_files_properties(src/shr_assert_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=maybe-uninitialized")
-   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=cpp")
-   set_source_files_properties(src/shr_cal_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion")
+ if(UNITTESTS)
+   find_package(PFUNIT REQUIRED)         
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ ")
+   add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
+   add_subdirectory(${CMAKE_SOURCE_DIR}/test/unit ${CMAKE_BINARY_DIR}/unittests)
    
 endif()
-add_dependencies (share genf90)
-target_include_directories(share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
-target_compile_definitions (share PUBLIC ${CMAKE_Fortran_COMPILER_DIRECTIVE})
-
 
 
