@@ -21,6 +21,7 @@ jobs:
       # Versions of all dependencies can be updated here - these match tag names in the github repo
       ESMF_VERSION: v8.6.1
       ParallelIO_VERSION: pio2_6_2
+      PFUNIT_VERSION: v4.9.0
     steps:
       - id: checkout-share
         uses: actions/checkout@v4
@@ -28,16 +29,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install gfortran
-          sudo apt-get install wget
           sudo apt-get install openmpi-bin libopenmpi-dev
+          sudo apt-get install libxml2-utils
           sudo apt-get install netcdf-bin libnetcdf-dev libnetcdff-dev
           sudo apt-get install pnetcdf-bin libpnetcdf-dev
+          sudo apt-get install libblas-dev
       - name: Cache PARALLELIO
         id: cache-PARALLELIO
         uses: actions/cache@v4
         with:
-          path: ${GITHUB_WORKSPACE}/pio
-          key: ${{ runner.os }}-${{ env.ParallelIO_VERSION }}-pio
+          path: pio
+          key: ${{ runner.os }}-${{ env.ParallelIO_VERSION }}
       - name: Build ParallelIO
         if: steps.cache-PARALLELIO.outputs.cache-hit != 'true'
         uses: NCAR/ParallelIO/.github/actions/parallelio_cmake@9390e30e29d4ebbfbef0fc72162cacd9e8f25e4e
@@ -62,16 +64,45 @@ jobs:
           esmpy: false
           cache: true
       
+      - name: Cache PFUNIT
+        id: cache-pfunit
+        uses: actions/cache@v4
+        with:
+          path: pfunit
+          key: ${{ runner.os }}-${{ env.PFUNIT_VERSION }}
+      - name: Checkout PFUNIT
+        if: steps.cache-pfunit.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          path: pfunit
+          ref: ${{ env.PFUNIT_VERSION }}
+          repository: Goddard-Fortran-Ecosystem/pFUnit
+      - name: build PFUNIT
+        if: steps.cache-pfunit.outputs.cache-hit != 'true'
+        run: |
+          pushd pfunit
+          cmake -DSKIP_MPI=YES -DSKIP_OPENMP=YES -B build
+          cmake --build build 
+          popd
+
       - name: Build SHARE
         uses: ./.github/actions/buildshare
         with:
           esmfmkfile: $ESMFMKFILE
           pio_path: ${GITHUB_WORKSPACE}/pio
           src_root: ${GITHUB_WORKSPACE}
-          cmake_flags: " -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON  -DCMAKE_Fortran_FLAGS=\"-DCPRGNU -g -Wall \
+          pfunit_root: ${GITHUB_WORKSPACE}/pfunit
+          cmake_flags: " -DUNITTESTS=ON -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON  -DCMAKE_Fortran_FLAGS=\" -g -Wall \
           -ffree-form -ffree-line-length-none -fallow-argument-mismatch\" \
           -DCMAKE_MODULE_PATH=$ESMF_ROOT/cmake"
-      - name: Test CDEPS
+      - name: Test share
         run: |
           cd build-share
           make VERBOSE=1
+          find unittests/ -type f -executable -print -exec {} \;
+#     the following can be used by developers to login to the github server in case of errors
+#     see https://github.com/marketplace/actions/debugging-with-tmate for further details
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+      
