@@ -84,6 +84,7 @@ contains
     ! local variables
 #ifdef CESMCOUPLED
     integer, external :: GPTLprint_memusage
+    integer :: ierr = 0
 #endif
     !-----------------------------------------------------------------------
 
