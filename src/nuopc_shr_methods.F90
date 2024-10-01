@@ -18,6 +18,7 @@ module nuopc_shr_methods
   use ESMF         , only : ESMF_Time, ESMF_TimeGet, ESMF_TimeSet, ESMF_ClockGetAlarm
   use ESMF         , only : ESMF_TimeInterval, ESMF_TimeIntervalSet, ESMF_TimeIntervalGet
   use ESMF         , only : ESMF_VM, ESMF_VMGet, ESMF_VMBroadcast, ESMF_VMGetCurrent
+  use ESMF         , only : ESMF_ClockGetNextTime
   use NUOPC        , only : NUOPC_CompAttributeGet
   use NUOPC_Model  , only : NUOPC_ModelGet
   use shr_kind_mod , only : r8 => shr_kind_r8, cl=>shr_kind_cl, cs=>shr_kind_cs
@@ -37,10 +38,10 @@ module nuopc_shr_methods
   public  :: alarmInit
   public  :: get_minimum_timestep
   public  :: chkerr
-
+  public  :: shr_get_rpointer_name
   private :: timeInit
   private :: field_getfldptr
-
+  
   ! Module data
   
   ! Clock and alarm options shared with esm_time_mod along with dtime_driver which is initialized there.
@@ -875,7 +876,47 @@ contains
     endif
   end function get_minimum_timestep
 
-!===============================================================================
+  subroutine shr_get_rpointer_name(gcomp, compname, ymd, time, rpfile, mode, rc)
+    type(ESMF_GRIDCOMP), intent(in) :: gcomp
+    character(len=3), intent(in) :: compname
+    integer, intent(in) :: ymd
+    integer, intent(in) :: time
+    character(len=*), intent(out) :: rpfile
+    character(len=*), intent(in) :: mode
+    integer, intent(out) :: rc
+    
+    ! local vars
+    integer :: yr, mon, day
+    character(len=16) timestr
+    logical :: isPresent
+    character(len=ESMF_MAXSTR)  :: inst_suffix
+    
+    character(len=*), parameter :: subname='shr_get_rpointer_name'
+    
+    rc = ESMF_SUCCESS
+
+    inst_suffix = ""
+    call NUOPC_CompAttributeGet(gcomp, name='inst_suffix', isPresent=isPresent, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    if(ispresent) call NUOPC_CompAttributeGet(gcomp, name='inst_suffix', value=inst_suffix, rc=rc)
+    
+    yr = ymd/10000
+    mon = (ymd - yr*10000)/100
+    day = (ymd - yr*10000 - mon*100)
+    write(timestr,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') yr,'-',mon,'-',day,'-',time
+
+    write(rpfile,*) "rpointer."//compname//trim(inst_suffix)//'.'//trim(timestr)
+    if (mode.eq.'read') then
+       inquire(file=trim(rpfile), exist=isPresent)
+       if(.not. isPresent) then
+          rpfile = "rpointer."//compname//trim(inst_suffix)
+          inquire(file=trim(rpfile), exist=isPresent)
+          if(.not. isPresent) then
+             call shr_sys_abort( subname//'ERROR no rpointer file found in '//rpfile//' or in '//rpfile//'.'//timestr )
+          endif
+       endif
+    endif
+  end subroutine shr_get_rpointer_name
 
   logical function chkerr(rc, line, file)
 
