@@ -501,7 +501,7 @@ contains
 
   subroutine alarmInit( clock, alarm, option, &
        opt_n, opt_ymd, opt_tod, RefTime, alarmname, advance_clock, rc)
-    use ESMF, only : ESMF_AlarmPrint
+    use ESMF, only : ESMF_AlarmPrint, ESMF_ClockGetAlarm
     ! Setup an alarm in a clock
     ! Notes: The ringtime sent to AlarmCreate MUST be the next alarm
     ! time.  If you send an arbitrary but proper ringtime from the
@@ -595,27 +595,23 @@ contains
           return
        end if
     end if
+    call ESMF_TimeIntervalSet(AlarmInterval, yy=9999, rc=rc)
+    if (chkerr(rc,__LINE__,u_FILE_u)) return
 
     ! Determine inputs for call to create alarm
     selectcase (trim(option))
 
     case (optNONE)
-       call ESMF_TimeIntervalSet(AlarmInterval, yy=9999, rc=rc)
-       if (chkerr(rc,__LINE__,u_FILE_u)) return
        call ESMF_TimeSet( NextAlarm, yy=9999, mm=12, dd=1, s=0, calendar=cal, rc=rc )
        if (chkerr(rc,__LINE__,u_FILE_u)) return
        update_nextalarm  = .false.
 
     case (optNever)
-       call ESMF_TimeIntervalSet(AlarmInterval, yy=9999, rc=rc)
-       if (chkerr(rc,__LINE__,u_FILE_u)) return
        call ESMF_TimeSet( NextAlarm, yy=9999, mm=12, dd=1, s=0, calendar=cal, rc=rc )
        if (chkerr(rc,__LINE__,u_FILE_u)) return
        update_nextalarm  = .false.
 
     case (optDate)
-       call ESMF_TimeIntervalSet(AlarmInterval, yy=9999, rc=rc)
-       if (chkerr(rc,__LINE__,u_FILE_u)) return
        call timeInit(NextAlarm, lymd, cal, ltod, rc)
        if (chkerr(rc,__LINE__,u_FILE_u)) return
        update_nextalarm  = .false.
@@ -682,6 +678,13 @@ contains
        call ESMF_TimeSet( NextAlarm, yy=cyy, mm=1, dd=1, s=0, calendar=cal, rc=rc )
        if (ChkErr(rc,__LINE__,u_FILE_u)) return
        update_nextalarm  = .true.
+
+    case (optEnd)
+       call ESMF_ClockGetAlarm(clock, alarmname="alarm_stop", alarm=alarm, rc=rc)
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       call ESMF_AlarmGet(alarm, ringTime=NextAlarm, rc=rc) 
+       if (ChkErr(rc,__LINE__,u_FILE_u)) return
+       
     case default
        call ESMF_LogWrite(subname//'unknown option '//trim(option), ESMF_LOGMSG_ERROR)
        rc = ESMF_FAILURE
