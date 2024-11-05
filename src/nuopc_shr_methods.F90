@@ -850,6 +850,7 @@ contains
           endif
        endif
     endif
+    rpfile = adjustl(rpfile)
   end subroutine shr_get_rpointer_name
 
   logical function chkerr(rc, line, file)
