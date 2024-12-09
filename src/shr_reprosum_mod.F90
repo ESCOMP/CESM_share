@@ -450,8 +450,9 @@ module shr_reprosum_mod
       else
          mpi_comm = MPI_COMM_WORLD
       endif
+#ifdef TIMING
       call t_barrierf('sync_repro_sum',mpi_comm)
-
+#endif
 ! check whether should abort if input contains NaNs or INFs
       abort_inf_nan = .not. repro_sum_allow_infnan
       if ( present(allow_infnan) ) then
