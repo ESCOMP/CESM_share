@@ -1,5 +1,4 @@
 module nuopc_shr_methods
-
   use ESMF         , only : operator(<), operator(/=), operator(+)
   use ESMF         , only : operator(-), operator(*) , operator(>=)
   use ESMF         , only : operator(<=), operator(>), operator(==), MOD
@@ -824,7 +823,6 @@ contains
     character(len=16) timestr
     logical :: isPresent
     character(len=ESMF_MAXSTR)  :: inst_suffix
-    
     character(len=*), parameter :: subname='shr_get_rpointer_name'
     
     rc = ESMF_SUCCESS
@@ -838,8 +836,8 @@ contains
     mon = (ymd - yr*10000)/100
     day = (ymd - yr*10000 - mon*100)
     write(timestr,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') yr,'-',mon,'-',day,'-',time
-
     write(rpfile,*) "rpointer."//compname//trim(inst_suffix)//'.'//trim(timestr)
+    rpfile = adjustl(rpfile)
     if (mode.eq.'read') then
        inquire(file=trim(rpfile), exist=isPresent)
        if(.not. isPresent) then
@@ -850,7 +848,6 @@ contains
           endif
        endif
     endif
-    rpfile = adjustl(rpfile)
   end subroutine shr_get_rpointer_name
 
   logical function chkerr(rc, line, file)
