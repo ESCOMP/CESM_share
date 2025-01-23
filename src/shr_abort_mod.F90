@@ -35,12 +35,15 @@ module shr_abort_mod
 contains
 
   !===============================================================================
-  subroutine shr_abort_abort(string,rc)
+  subroutine shr_abort_abort(string,rc, line, file)
+    use esmf, only : ESMF_LOGWRITE, ESMF_LOGMSG_ERROR
     ! Consistent stopping mechanism
 
     !----- arguments -----
     character(len=*)    , intent(in), optional :: string  ! error message string
     integer(shr_kind_in), intent(in), optional :: rc      ! error code
+    integer(shr_kind_in), intent(in), optional :: line
+    character(len=*), intent(in), optional :: file
 
     !----- local -----
     logical :: flag
@@ -58,6 +61,8 @@ contains
 
     call print_error_to_logs("ERROR", local_string)
 
+    call ESMF_LogWrite(local_string, ESMF_LOGMSG_ERROR, line=line, file=file)
+    
     call shr_abort_backtrace()
 
     call shr_mpi_initialized(flag)
