@@ -38,13 +38,14 @@ contains
 
     !----- arguments -----
     character(len=*)    , intent(in), optional :: string  ! error message string
-    integer(shr_kind_in), intent(inout), optional :: rc      ! error code
+    integer(shr_kind_in), intent(in), optional :: rc      ! error code
     integer(shr_kind_in), intent(in), optional :: line
     character(len=*), intent(in), optional :: file
-
+   
     ! Local version of the string.
     ! (Gets a default value if string is not present.)
     character(len=shr_kind_cx) :: local_string
+    integer :: lrc
     !-------------------------------------------------------------------------------
 
     if (present(string)) then
@@ -54,9 +55,12 @@ contains
     end if
     if(present(rc)) then
        write(local_string, *) trim(local_string), ' rc=',rc
+       lrc = rc
+    else
+       lrc = 0
     endif
 
-    call shr_log_error(local_string, rc=rc, line=line, file=file)
+    call shr_log_error(local_string, rc=lrc, line=line, file=file)
     
     call shr_abort_backtrace()
 
