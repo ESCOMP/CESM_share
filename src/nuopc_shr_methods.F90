@@ -800,7 +800,7 @@ contains
     
     ! local vars
     integer :: yr, mon, day
-    character(len=18) timestr
+    character(len=19) timestr
     logical :: isPresent , isSet
     character(len=ESMF_MAXSTR)  :: inst_suffix , pointer_date
     character(len=*), parameter :: subname='shr_get_rpointer_name'
@@ -825,13 +825,13 @@ contains
         mon = (ymd - yr*10000)/100
         day = (ymd - yr*10000 - mon*100)
         if(yr <= 9999) then
-           write(timestr,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') yr,'-',mon,'-',day,'-',time
+           write(timestr,'(a,i4.4,a,i2.2,a,i2.2,a,i5.5)') '.',yr,'-',mon,'-',day,'-',time
         else if (yr <= 999999) then
-           write(timestr,'(i6.6,a,i2.2,a,i2.2,a,i5.5)') yr,'-',mon,'-',day,'-',time
+           write(timestr,'(a,i6.6,a,i2.2,a,i2.2,a,i5.5)') '.',yr,'-',mon,'-',day,'-',time
         endif
-        write(rpfile,*) "rpointer."//compname//trim(inst_suffix)//'.'//trim(timestr)
     endif
 
+    write(rpfile,*) "rpointer."//compname//trim(inst_suffix)//trim(timestr)
     rpfile = adjustl(rpfile)
 
     if (mode.eq.'read') then
