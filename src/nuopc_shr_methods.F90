@@ -800,9 +800,9 @@ contains
     
     ! local vars
     integer :: yr, mon, day
-    character(len=18) timestr
-    logical :: isPresent
-    character(len=ESMF_MAXSTR)  :: inst_suffix
+    character(len=19) timestr
+    logical :: isPresent , isSet
+    character(len=ESMF_MAXSTR)  :: inst_suffix , pointer_date
     character(len=*), parameter :: subname='shr_get_rpointer_name'
     
     rc = ESMF_SUCCESS
@@ -812,23 +812,35 @@ contains
     if (ChkErr(rc,__LINE__,u_FILE_u)) return
     if(ispresent) call NUOPC_CompAttributeGet(gcomp, name='inst_suffix', value=inst_suffix, rc=rc)
     
-    yr = ymd/10000
-    mon = (ymd - yr*10000)/100
-    day = (ymd - yr*10000 - mon*100)
-    if(yr <= 9999) then
-       write(timestr,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') yr,'-',mon,'-',day,'-',time
-    else if (yr <= 999999) then
-       write(timestr,'(i6.6,a,i2.2,a,i2.2,a,i5.5)') yr,'-',mon,'-',day,'-',time
+    ! if restart_pointer_append_date is false then don't append timestamp
+    timestr = ""
+    pointer_date = ".true."
+    call NUOPC_CompAttributeGet(gcomp, name="restart_pointer_append_date", isPresent=isPresent, isSet=isSet, rc=rc)
+    if (ChkErr(rc,__LINE__,u_FILE_u)) return
+    if (isPresent .and. isSet) then
+       call NUOPC_CompAttributeGet(gcomp, name='restart_pointer_append_date', value=pointer_date, rc=rc)
     endif
-    write(rpfile,*) "rpointer."//compname//trim(inst_suffix)//'.'//trim(timestr)
+    if (trim(pointer_date) .eq. '.true.') then
+        yr = ymd/10000
+        mon = (ymd - yr*10000)/100
+        day = (ymd - yr*10000 - mon*100)
+        if(yr <= 9999) then
+           write(timestr,'(a,i4.4,a,i2.2,a,i2.2,a,i5.5)') '.',yr,'-',mon,'-',day,'-',time
+        else if (yr <= 999999) then
+           write(timestr,'(a,i6.6,a,i2.2,a,i2.2,a,i5.5)') '.',yr,'-',mon,'-',day,'-',time
+        endif
+    endif
+
+    write(rpfile,*) "rpointer."//compname//trim(inst_suffix)//trim(timestr)
     rpfile = adjustl(rpfile)
+
     if (mode.eq.'read') then
        inquire(file=trim(rpfile), exist=isPresent)
        if(.not. isPresent) then
           rpfile = "rpointer."//compname//trim(inst_suffix)
           inquire(file=trim(rpfile), exist=isPresent)
           if(.not. isPresent) then
-             call shr_sys_abort( subname//'ERROR no rpointer file found in '//rpfile//' or in '//rpfile//'.'//timestr )
+             call shr_sys_abort( subname//'ERROR no rpointer file found in '//rpfile//' or in '//rpfile//trim(inst_suffix)//trim(timestr) )
           endif
        endif
     endif
