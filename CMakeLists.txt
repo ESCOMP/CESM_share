@@ -7,8 +7,6 @@ option(WERROR "add the -Werror flag to compiler (works with gnu)" OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
-enable_language(Fortran)
-
 # if (DEFINED CIMEROOT)
 #   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
 #   include(${CASEROOT}/Macros.cmake)
