@@ -64,8 +64,6 @@ set (CMAKE_Fortran_COMPILER_DIRECTIVE "-DCPR${CMAKE_Fortran_COMPILER_NAME}"
 message("CMAKE_Fortran_COMPILER_DIRECTIVE is ${CMAKE_Fortran_COMPILER_DIRECTIVE}")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_BINARY_DIR}")
 
-add_subdirectory(src)
-
 if (DEFINED ENV{PIO_ROOT})
    message("PIO_ROOT is $ENV{PIO_ROOT}")
 else()
@@ -135,6 +133,7 @@ add_dependencies (csm_share genf90)
 target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
 
 if(UNITTESTS)
+   add_subdirectory(src)
    find_package(PFUNIT REQUIRED)
    # need to turn the warning check off for pfunit
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ ")
