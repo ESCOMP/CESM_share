@@ -2,10 +2,30 @@ cmake_minimum_required(VERSION 3.10)
 include(ExternalProject)
 include(FetchContent)
 
+set(CIME_CMAKE_MODULE_DIRECTORY "" CACHE PATH "Path to CIME's CMake modules")
+if (NOT DEFINED CIME_CMAKE_MODULE_DIRECTORY OR CIME_CMAKE_MODULE_DIRECTORY STREQUAL "")
+   message(FATAL_ERROR "You must set CIME_CMAKE_MODULE_DIRECTORY when invoking cmake, e.g. -DCIME_CMAKE_MODULE_DIRECTORY=/path/to/cime/CIME/non_py/src/CMake")
+endif()
+
+option(USE_CIME_MACROS "include a CIME-generated Macros.cmake file from CMAKE_BINARY_DIR" OFF)
 option(UNITTESTS "build the pfunit based tests (must have PFUNIT_ROOT)" OFF)
 option(WERROR "add the -Werror flag to compiler (works with gnu)" OFF)
 
+if (USE_CIME_MACROS)
+   set(CIME_SKIP_MACROS OFF)
+else()
+   set(CIME_SKIP_MACROS ON)
+endif()
+if (UNITTESTS)
+   set(CIME_SKIP_UNITTESTS OFF)
+else()
+   set(CIME_SKIP_UNITTESTS ON)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CIME_CMAKE_MODULE_DIRECTORY})
+
+include(CIME_initial_setup)
 
 # if (DEFINED CIMEROOT)
 #   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
@@ -28,27 +48,11 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 project(SHARE LANGUAGES Fortran C VERSION 0.1)
 
-set(ENABLE_GENF90 ON)
-include(Sourcelist_utils)
-include(Compilers)
-include(genf90_utils)
-#===== genf90 =====
-if (DEFINED GENF90_PATH)
-   add_custom_target(genf90 DEPENDS ${GENF90_PATH}/genf90.pl)
-else ()
-   ExternalProject_Add (genf90
-      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
-      GIT_REPOSITORY https://github.com/PARALLELIO/genf90
-      GIT_TAG update_cmake_interface
-      UPDATE_COMMAND ""
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND "")
-   ExternalProject_Get_Property (genf90 SOURCE_DIR)
-   set (GENF90_PATH ${SOURCE_DIR})
-   unset (SOURCE_DIR)
-endif ()
-set(GENF90 "${GENF90_PATH}/genf90.pl")
+# CIME_utils defines an ENABLE_GENF90 option, which is OFF by default. However, we need
+# GENF90 in order to generate some of the files from *.in files in this library, so here
+# we set the default to ON.
+set(ENABLE_GENF90 ON CACHE BOOL "Use genf90.pl to regenerate out-of-date Fortran files from .in files.")
+include(CIME_utils)
 
 string (TOUPPER "${CMAKE_Fortran_COMPILER_ID}" CMAKE_Fortran_COMPILER_NAME)
 if (CMAKE_Fortran_COMPILER_NAME STREQUAL "XL")
@@ -115,9 +119,9 @@ set(GENF90SOURCES src/shr_assert_mod.F90 src/shr_frz_mod.F90 src/shr_infnan_mod.
 foreach (SRC_FILE IN LISTS GENF90SOURCES)
    list(APPEND SHAREGENF90SRC ${SRC_FILE})
    add_custom_command (OUTPUT ${SRC_FILE}
-      COMMAND ${GENF90_PATH}/genf90.pl
+      COMMAND ${GENF90}
       ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in > ${SRC_FILE}
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in genf90)
+      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in)
 endforeach ()
 
 file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
@@ -127,12 +131,10 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 add_library(csm_share STATIC ${CSOURCES} ${FSOURCES} ${SHAREGENF90SRC} )
 
-add_dependencies (csm_share genf90)
 target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
 
 if(UNITTESTS)
    add_subdirectory(src)
-   find_package(PFUNIT REQUIRED)
    # need to turn the warning check off for pfunit
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ ")
    add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
