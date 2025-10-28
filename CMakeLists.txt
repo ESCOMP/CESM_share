@@ -1,6 +1,4 @@
 cmake_minimum_required(VERSION 3.10)
-include(ExternalProject)
-include(FetchContent)
 
 set(CIME_CMAKE_MODULE_DIRECTORY "" CACHE PATH "Path to CIME's CMake modules")
 if (NOT DEFINED CIME_CMAKE_MODULE_DIRECTORY OR CIME_CMAKE_MODULE_DIRECTORY STREQUAL "")
