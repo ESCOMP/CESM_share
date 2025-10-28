@@ -25,25 +25,6 @@ list(APPEND CMAKE_MODULE_PATH ${CIME_CMAKE_MODULE_DIRECTORY})
 
 include(CIME_initial_setup)
 
-# if (DEFINED CIMEROOT)
-#   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
-#   include(${CASEROOT}/Macros.cmake)
-#   if (${PIO_VERSION} LESS 2)
-#     message( FATAL_ERROR "Version 2 of the PIO library required")
-#   endif()
-#   if (MPILIB STREQUAL mpi-serial)
-#     set(CMAKE_Fortran_COMPILER ${SFC})
-#     set(CMAKE_C_COMPILER ${SCC})
-#   else()
-#     set(CMAKE_Fortran_COMPILER ${MPIFC})
-#     set(CMAKE_C_COMPILER ${MPICC})
-#   endif()
-#   set(CMAKE_Fortran_FLAGS "${FFLAGS} ${CPPDEFS} -I${LIBROOT}/include -I${LIBROOT}/nuopc/esmf/${NINST_VALUE}/include")
-#   add_compile_definitions(CESMCOUPLED)
-#   list(APPEND CMAKE_MODULE_PATH ${SRC_ROOT}/cime/CIME/non_py/src/CMake)
-# else()
-#   set(BLD_STANDALONE TRUE)
-
 project(SHARE LANGUAGES Fortran C VERSION 0.1)
 
 # CIME_utils defines an ENABLE_GENF90 option, which is OFF by default. However, we need
