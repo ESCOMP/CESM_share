@@ -6,6 +6,10 @@ use funit
 
 #undef NDEBUG
 #include "shr_assert.h"
+! The following use statement shouldn't be needed since shr_assert.h has a use of
+! shr_assert_mod. However, without this use statement, CMake seems not to generate the
+! needed dependency of this file on shr_assert_mod.
+use shr_assert_mod
 
 contains
 
