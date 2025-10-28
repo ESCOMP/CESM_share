@@ -1,10 +1,11 @@
-set(genf90_files shr_infnan_mod.F90.in shr_assert_mod.F90.in)
+set(genf90_files shr_assert_mod.F90.in shr_frz_mod.F90.in shr_infnan_mod.F90.in)
 
 process_genf90_source_list("${genf90_files}" ${CMAKE_CURRENT_BINARY_DIR}
   share_genf90_sources)
 
 sourcelist_to_parent(share_genf90_sources)
 
+# share_sources is currently just used for unit tests
 list(APPEND share_sources "${share_genf90_sources}")
 
 list(APPEND share_sources

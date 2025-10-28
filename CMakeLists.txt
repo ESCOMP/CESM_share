@@ -114,27 +114,18 @@ if(WERROR)
 
 endif()
 
-#===== Fortran Source Generation with GenF90 =====
-set(GENF90SOURCES src/shr_assert_mod.F90 src/shr_frz_mod.F90 src/shr_infnan_mod.F90)
-foreach (SRC_FILE IN LISTS GENF90SOURCES)
-   list(APPEND SHAREGENF90SRC ${SRC_FILE})
-   add_custom_command (OUTPUT ${SRC_FILE}
-      COMMAND ${GENF90}
-      ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in > ${SRC_FILE}
-      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in)
-endforeach ()
+# Among other things, this handles the genf90 generation
+add_subdirectory(src)
 
 file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
 file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
-
-add_library(csm_share STATIC ${CSOURCES} ${FSOURCES} ${SHAREGENF90SRC} )
+add_library(csm_share STATIC ${CSOURCES} ${FSOURCES} ${share_genf90_sources} )
+declare_generated_dependencies(csm_share "${share_genf90_sources}")
 
 target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
 
 if(UNITTESTS)
-   add_subdirectory(src)
    # need to turn the warning check off for pfunit
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ ")
    add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
