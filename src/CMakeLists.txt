@@ -30,9 +30,3 @@ list(APPEND share_sources
 
 sourcelist_to_parent(share_sources)
 
-if (DEFINED ENV{ESMF_ROOT})
-  list(APPEND CMAKE_MODULE_PATH $ENV{ESMF_ROOT}/cmake)
-endif()
-message("ESMF cmake is ${CMAKE_MODULE_PATH}")
-find_package(ESMF REQUIRED)
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS}")
