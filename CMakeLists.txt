@@ -58,12 +58,9 @@ endif()
 
 if (DEFINED MPILIB)
    if (${MPILIB} STREQUAL "mpi-serial")
-      if (NOT DEFINED ENV{MPISERIAL_ROOT})
-         message(FATAL_ERROR "For MPILIB=mpi-serial, the MPISERIAL_ROOT environment variable must be defined")
-      endif()
-
-      include_directories("$ENV{MPISERIAL_ROOT}")
-      link_directories("$ENV{MPISERIAL_ROOT}")
+      find_package(MPISERIAL COMPONENTS C Fortran REQUIRED)
+      # We need this for the sake of includes of mpif.h
+      include_directories(${MPISERIAL_Fortran_INCLUDE_DIR})
    else()
       find_package(MPI REQUIRED)
    endif()
