@@ -47,6 +47,7 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTI
 
 if (DEFINED ENV{PIO_ROOT})
    message("PIO_ROOT is $ENV{PIO_ROOT}")
+   link_directories("$ENV{PIO_ROOT}/lib")
 else()
    if (DEFINED PIO)
       set(PIO_PATH ${PIO})
@@ -54,6 +55,7 @@ else()
       set(PIO_PATH $ENV{PIO})
    endif()
    find_package(PIO REQUIRED COMPONENT C Fortran PATH ${PIO_PATH})
+   link_directories(${PIO_LIBDIR})
 endif()
 
 if (DEFINED MPILIB)
@@ -74,7 +76,7 @@ endif()
 
 find_package(ESMF REQUIRED)
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS} ")
-link_libraries("-L$ENV{PIO_ROOT}/lib -L${ESMF_LIBSDIR}")
+link_libraries("-L${ESMF_LIBSDIR}")
 
 if("${COMPILER}" STREQUAL "nag")
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
