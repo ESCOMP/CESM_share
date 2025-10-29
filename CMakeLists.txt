@@ -109,7 +109,11 @@ file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
 add_library(csm_share STATIC ${CSOURCES} ${FSOURCES} ${share_genf90_sources} )
 declare_generated_dependencies(csm_share "${share_genf90_sources}")
 
-target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
+# Add these include directories to all targets, including unit tests:
+include_directories(include RandNum/include)
+# But just add this to csm_share (adding this to all targets causes a failure in the
+# shr_cal tests for some reason, and is probably unnecessary):
+target_include_directories(csm_share PRIVATE ${CMAKE_BINARY_DIR})
 
 if(UNITTESTS)
    # need to turn the warning check off for pfunit
