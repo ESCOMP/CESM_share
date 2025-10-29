@@ -28,12 +28,13 @@ jobs:
       - id: load-env
         run: |
           sudo apt-get update
-          sudo apt-get install gfortran
-          sudo apt-get install openmpi-bin libopenmpi-dev
-          sudo apt-get install libxml2-utils
-          sudo apt-get install netcdf-bin libnetcdf-dev libnetcdff-dev
-          sudo apt-get install pnetcdf-bin libpnetcdf-dev
-          sudo apt-get install libblas-dev
+          sudo apt-get install -y cmake
+          sudo apt-get install -y gfortran
+          sudo apt-get install -y openmpi-bin libopenmpi-dev
+          sudo apt-get install -y libxml2-utils
+          sudo apt-get install -y netcdf-bin libnetcdf-dev libnetcdff-dev
+          sudo apt-get install -y pnetcdf-bin libpnetcdf-dev
+          sudo apt-get install -y libblas-dev
       - name: Cache PARALLELIO
         id: cache-PARALLELIO
         uses: actions/cache@v4
