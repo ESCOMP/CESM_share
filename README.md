@@ -36,9 +36,8 @@ CIME's run_tests.py script, which leverages machine configuration information fr
 [ccs_config](https://github.com/esmci/ccs_config_cesm) or something similar.
 
 If you are testing this share code in the context of a CESM (or CAM, CTSM, etc.) checkout,
-then you already have the required cime and ccs_config_cesm repositories in the correct
-location. If not, you will need to obtain recent versions of cime and ccs_config_cesm,
-checking them out alongside this share code repository.
+then you already have the required cime and ccs_config_cesm repositories. If not, you will
+need to obtain recent versions of cime and ccs_config_cesm. (cime and ccs_config_cesm must be checked out in the same directory as each other - i.e., sibling directories of each other. The following instructions assume that they are also sibling directories of the share code; this isn't necessary, but if they are in a different location then you will need to adjust the path to cime's run_tests.py script in the below command.)
 
 If this share code is at the path `/PATH/TO/CODE/share`, then do the following:
 
