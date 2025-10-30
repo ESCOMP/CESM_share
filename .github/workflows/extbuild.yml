@@ -18,6 +18,8 @@ jobs:
       CXX: mpicxx
       CPPFLAGS: "-I/usr/include -I/usr/local/include "
       LDFLAGS: "-L/usr/lib/x86_64-linux-gnu "
+      CIME_MODEL: cesm
+      CIME_MACHINE: ubuntu-latest
       # Versions of all dependencies can be updated here - these match tag names in the github repo
       ESMF_VERSION: v8.6.1
       ParallelIO_VERSION: pio2_6_2
