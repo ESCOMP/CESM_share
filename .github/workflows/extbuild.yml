@@ -35,6 +35,16 @@ jobs:
           sudo apt-get install -y netcdf-bin libnetcdf-dev libnetcdff-dev
           sudo apt-get install -y pnetcdf-bin libpnetcdf-dev
           sudo apt-get install -y libblas-dev
+      - name: Checkout CIME
+        uses: actions/checkout@v4
+        with:
+          repository: ESMCI/cime
+          path: cime
+      - name: Checkout ccs_config
+        uses: actions/checkout@v4
+        with:
+          repository: ESMCI/ccs_config_cesm
+          path: ccs_config
       - name: Cache PARALLELIO
         id: cache-PARALLELIO
         uses: actions/cache@v4
@@ -87,14 +97,18 @@ jobs:
           popd
 
       - name: Build SHARE
+        # This step builds share without unit tests, and only uses CIME for the sake of
+        # some CMake functions and genf90, NOT using CIME / ccs_config for machine
+        # configuration (in contrast to the "Test share" step below).
         uses: ./.github/actions/buildshare
         with:
           esmfmkfile: $ESMFMKFILE
+          cime_path: ${GITHUB_WORKSPACE}/cime
           pio_path: ${GITHUB_WORKSPACE}/pio
           src_root: ${GITHUB_WORKSPACE}
           pfunit_root: ${GITHUB_WORKSPACE}/pfunit
-          cmake_flags: " -DUNITTESTS=ON -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON  -DCMAKE_Fortran_FLAGS=\" -g -Wall \
-          -ffree-form -ffree-line-length-none -fallow-argument-mismatch\" \
+          cmake_flags: " -Wno-dev -DCMAKE_BUILD_TYPE=DEBUG -DWERROR=ON \
+          -DCMAKE_Fortran_FLAGS=\" -g -Wall -ffree-form -ffree-line-length-none -fallow-argument-mismatch\" \
           -DCMAKE_MODULE_PATH=$ESMF_ROOT/cmake"
       - name: Test share
         run: |

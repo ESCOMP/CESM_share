@@ -6,6 +6,11 @@ inputs:
     default: main
     required: False
     type: string
+  cime_path:
+    description: 'Path to CIME repository'
+    default: $GITHUB_WORKSPACE/cime
+    required: False
+    type: string
   pio_path:
     description: 'Path to the installed parallelio code root'
     default: $HOME/pio
@@ -49,6 +54,6 @@ runs:
         export PFUNIT_DIR=${{ inputs.pfunit_root }}/build
         export ESMFMKFILE=${{ inputs.esmfmkfile }}
         export PIO_ROOT=${{ inputs.pio_path }}
-        cmake ${{ inputs.cmake_flags }} ${{ inputs.src_root }}
+        cmake -DCIME_CMAKE_MODULE_DIRECTORY=${{ inputs.cime_path }}/CIME/non_py/src/CMake -DCMAKE_PROGRAM_PATH=${{ inputs.cime_path }}/CIME/non_py/externals/genf90 ${{ inputs.cmake_flags }} ${{ inputs.src_root }}
         make VERBOSE=1
         popd
