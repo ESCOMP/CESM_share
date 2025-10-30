@@ -38,8 +38,9 @@ jobs:
       - name: Checkout CIME
         uses: actions/checkout@v4
         with:
-          repository: ESMCI/cime
+          repository: billsacks/cime
           path: cime
+          ref: unit_test_additions_for_cesm_share
       - name: Checkout ccs_config
         uses: actions/checkout@v4
         with:
