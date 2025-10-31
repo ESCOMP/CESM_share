@@ -154,6 +154,7 @@ jobs:
           export ESMFMKFILE=$ESMFMKFILE
           export PIO_ROOT=${GITHUB_WORKSPACE}/pio
           export MPISERIAL=${GITHUB_WORKSPACE}/mpiserial
+          export FFLAGS="-fallow-argument-mismatch"
           ${GITHUB_WORKSPACE}/cime/scripts/fortran_unit_testing/run_tests.py --build-dir ./unit_tests.temp --cmake-args " -DUNITTESTS=ON -DUSE_CIME_MACROS=ON"
 
 #     the following can be used by developers to login to the github server in case of errors
