@@ -128,6 +128,9 @@ jobs:
           -DCMAKE_MODULE_PATH=$ESMF_ROOT/cmake"
       - name: Test share
         run: |
+          export PFUNIT_PATH=${GITHUB_WORKSPACE}/pfunit/build
+          export ESMFMKFILE=$ESMFMKFILE
+          export PIO_ROOT=${GITHUB_WORKSPACE}/pio
           ${GITHUB_WORKSPACE}/cime/scripts/fortran_unit_testing/run_tests.py --build-dir ./unit_tests.temp --cmake-args " -DUNITTESTS=ON -DUSE_CIME_MACROS=ON"
 
 #     the following can be used by developers to login to the github server in case of errors
