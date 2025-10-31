@@ -24,6 +24,7 @@ jobs:
       ESMF_VERSION: v8.6.1
       ParallelIO_VERSION: pio2_6_2
       PFUNIT_VERSION: v4.9.0
+      MPISERIAL_VERSION: MPIserial_2.5.4
     steps:
       - id: checkout-share
         uses: actions/checkout@v4
@@ -99,6 +100,27 @@ jobs:
           cmake --build build 
           popd
 
+      - name: Cache MPI-Serial
+        id: cache-mpiserial
+        uses: actions/cache@v4
+        with:
+          path: mpiserial
+          key: ${{ runner.os }}-${{ env.MPISERIAL_VERSION }}
+      - name: Checkout MPI-Serial
+        if: steps.cache-mpiserial.outputs.cache-hit != 'true'
+        uses: actions/checkout@v4
+        with:
+          path: mpiserial
+          ref: ${{ env.MPISERIAL_VERSION }}
+          repository: ESMCI/mpi-serial
+      - name: Build MPI-Serial
+        if: steps.cache-mpiserial.outputs.cache-hit != 'true'
+        run: |
+          pushd mpiserial
+          ./configure
+          make
+          popd
+
       # Note that we have two steps below, which exercise different aspects of the build:
       # - The "Build SHARE" step builds share without unit tests, and only uses CIME for
       #   the sake of some CMake functions and genf90, NOT using CIME / ccs_config for
@@ -131,6 +153,7 @@ jobs:
           export PFUNIT_PATH=${GITHUB_WORKSPACE}/pfunit/build
           export ESMFMKFILE=$ESMFMKFILE
           export PIO_ROOT=${GITHUB_WORKSPACE}/pio
+          export MPISERIAL=${GITHUB_WORKSPACE}/mpiserial
           ${GITHUB_WORKSPACE}/cime/scripts/fortran_unit_testing/run_tests.py --build-dir ./unit_tests.temp --cmake-args " -DUNITTESTS=ON -DUSE_CIME_MACROS=ON"
 
 #     the following can be used by developers to login to the github server in case of errors
