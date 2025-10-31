@@ -152,7 +152,6 @@ jobs:
       - name: Test share
         run: |
           export PFUNIT_PATH=${GITHUB_WORKSPACE}/pfunit/build
-          export ESMFMKFILE=$ESMFMKFILE
           export PIO_ROOT=${GITHUB_WORKSPACE}/pio
           export MPISERIAL=${GITHUB_WORKSPACE}/mpiserial
           ${GITHUB_WORKSPACE}/cime/scripts/fortran_unit_testing/run_tests.py --build-dir ./unit_tests.temp --cmake-args " -DUNITTESTS=ON -DUSE_CIME_MACROS=ON"
