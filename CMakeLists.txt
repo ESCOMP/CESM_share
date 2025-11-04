@@ -1,137 +1,115 @@
 cmake_minimum_required(VERSION 3.10)
-include(ExternalProject)
-include(FetchContent)
 
+set(CIME_CMAKE_MODULE_DIRECTORY "" CACHE PATH "Path to CIME's CMake modules")
+if (NOT DEFINED CIME_CMAKE_MODULE_DIRECTORY OR CIME_CMAKE_MODULE_DIRECTORY STREQUAL "")
+   message(FATAL_ERROR "You must set CIME_CMAKE_MODULE_DIRECTORY when invoking cmake, e.g. -DCIME_CMAKE_MODULE_DIRECTORY=/path/to/cime/CIME/non_py/src/CMake")
+endif()
 
+option(USE_CIME_MACROS "include a CIME-generated Macros.cmake file from CMAKE_BINARY_DIR" OFF)
+option(UNITTESTS "build the pfunit based tests (must have PFUNIT_ROOT)" OFF)
+option(WERROR "add the -Werror flag to compiler (works with gnu)" OFF)
 
- option(WERROR "add the -Werror flag to compiler (works with gnu)" OFF)
- option(UNITTESTS "build the pfunit based tests (must have PFUNIT_ROOT)" OFF)
- enable_language(Fortran)
- set(ENABLE_GENF90 ON)
+if (USE_CIME_MACROS)
+   set(CIME_SKIP_MACROS OFF)
+else()
+   set(CIME_SKIP_MACROS ON)
+endif()
+if (UNITTESTS)
+   set(CIME_SKIP_UNITTESTS OFF)
+else()
+   set(CIME_SKIP_UNITTESTS ON)
+endif()
 
-# if (DEFINED CIMEROOT)
-#   message("Using CIME in ${CIMEROOT} with compiler ${COMPILER}")
-#   include(${CASEROOT}/Macros.cmake)
-#   if (${PIO_VERSION} LESS 2)
-#     message( FATAL_ERROR "Version 2 of the PIO library required")
-#   endif()
-#   if (MPILIB STREQUAL mpi-serial)
-#     set(CMAKE_Fortran_COMPILER ${SFC})
-#     set(CMAKE_C_COMPILER ${SCC})
-#   else()
-#     set(CMAKE_Fortran_COMPILER ${MPIFC})
-#     set(CMAKE_C_COMPILER ${MPICC})
-#   endif()
-#   set(CMAKE_Fortran_FLAGS "${FFLAGS} ${CPPDEFS} -I${LIBROOT}/include -I${LIBROOT}/nuopc/esmf/${NINST_VALUE}/include")
-#   add_compile_definitions(CESMCOUPLED)
-#   list(APPEND CMAKE_MODULE_PATH ${SRC_ROOT}/cime/CIME/non_py/src/CMake)
-# else()
-#   set(BLD_STANDALONE TRUE)
-   project(SHARE LANGUAGES Fortran C VERSION 0.1)
-   list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-   include(Sourcelist_utils)
-   include(Compilers)
-   include(genf90_utils)
-#===== genf90 =====
-  if (DEFINED GENF90_PATH)
-    add_custom_target(genf90
-      DEPENDS ${GENF90_PATH}/genf90.pl)
-  else ()
-    ExternalProject_Add (genf90
-      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/genf90
-      GIT_REPOSITORY https://github.com/PARALLELIO/genf90
-      GIT_TAG update_cmake_interface
-      UPDATE_COMMAND ""
-      CONFIGURE_COMMAND ""
-      BUILD_COMMAND ""
-      INSTALL_COMMAND "")
-    ExternalProject_Get_Property (genf90 SOURCE_DIR)
-    set (GENF90_PATH ${SOURCE_DIR})
-    unset (SOURCE_DIR)
-  endif ()
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CIME_CMAKE_MODULE_DIRECTORY})
 
-   set(GENF90 "${GENF90_PATH}/genf90.pl")
+include(CIME_initial_setup)
 
+project(SHARE LANGUAGES Fortran C VERSION 0.1)
 
-   string (TOUPPER "${CMAKE_Fortran_COMPILER_ID}" CMAKE_Fortran_COMPILER_NAME)
-   if (CMAKE_Fortran_COMPILER_NAME STREQUAL "XL")
-     set (CMAKE_Fortran_COMPILER_NAME "IBM")
-   endif ()
-   if (CMAKE_Fortran_COMPILER_NAME STREQUAL "INTELLLVM")
-     set (CMAKE_Fortran_COMPILER_NAME "INTEL")
-   endif ()
-   set (CMAKE_Fortran_COMPILER_DIRECTIVE "-DCPR${CMAKE_Fortran_COMPILER_NAME}"
-       CACHE STRING "Fortran compiler name preprocessor directive")
-     message("CMAKE_Fortran_COMPILER_DIRECTIVE is ${CMAKE_Fortran_COMPILER_DIRECTIVE}")
- set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_BINARY_DIR}")
+# CIME_utils defines an ENABLE_GENF90 option, which is OFF by default. However, we need
+# GENF90 in order to generate some of the files from *.in files in this library, so here
+# we set the default to ON.
+set(ENABLE_GENF90 ON CACHE BOOL "Use genf90.pl to regenerate out-of-date Fortran files from .in files.")
+include(CIME_utils)
 
- add_subdirectory(src)
+string (TOUPPER "${CMAKE_Fortran_COMPILER_ID}" CMAKE_Fortran_COMPILER_NAME)
+if (CMAKE_Fortran_COMPILER_NAME STREQUAL "XL")
+   set (CMAKE_Fortran_COMPILER_NAME "IBM")
+endif ()
+if (CMAKE_Fortran_COMPILER_NAME STREQUAL "INTELLLVM")
+   set (CMAKE_Fortran_COMPILER_NAME "INTEL")
+endif ()
+set (CMAKE_Fortran_COMPILER_DIRECTIVE "-DCPR${CMAKE_Fortran_COMPILER_NAME}"
+     CACHE STRING "Fortran compiler name preprocessor directive")
+message("CMAKE_Fortran_COMPILER_DIRECTIVE is ${CMAKE_Fortran_COMPILER_DIRECTIVE}")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_BINARY_DIR}")
 
- if (DEFINED ENV{PIO_ROOT})
+if (DEFINED ENV{PIO_ROOT})
    message("PIO_ROOT is $ENV{PIO_ROOT}")
- else()
+   link_directories("$ENV{PIO_ROOT}/lib")
+else()
    if (DEFINED PIO)
-     set(PIO_PATH ${PIO})
+      set(PIO_PATH ${PIO})
    else()
-     set(PIO_PATH $ENV{PIO})
+      set(PIO_PATH $ENV{PIO})
    endif()
    find_package(PIO REQUIRED COMPONENT C Fortran PATH ${PIO_PATH})
- endif()
+   link_directories(${PIO_LIBDIR})
+endif()
 
- if (NOT DEFINED MPILIB OR NOT ${MPILIB} STREQUAL "mpi-serial")
+if (DEFINED MPILIB)
+   if (${MPILIB} STREQUAL "mpi-serial")
+      find_package(MPISERIAL COMPONENTS C Fortran REQUIRED)
+      # We need this for the sake of includes of mpif.h
+      include_directories(${MPISERIAL_Fortran_INCLUDE_DIR})
+   else()
+      find_package(MPI REQUIRED)
+   endif()
+else()
    find_package(MPI REQUIRED)
- endif()
+endif()
 
- if (DEFINED ENV{ESMF_ROOT})
+if (DEFINED ENV{ESMF_ROOT})
    list(APPEND CMAKE_MODULE_PATH $ENV{ESMF_ROOT}/cmake)
- endif()
+endif()
 
- find_package(ESMF REQUIRED)
- set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS} ")
- link_libraries("-L$ENV{PIO_ROOT}/lib -L${ESMF_LIBSDIR}")
+find_package(ESMF REQUIRED)
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS} ")
+link_libraries("-L${ESMF_LIBSDIR}")
 
-
- if("${COMPILER}" STREQUAL "nag")
+if("${COMPILER}" STREQUAL "nag")
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
- endif()
- set(GENF90SOURCES src/shr_assert_mod.F90 src/shr_frz_mod.F90 src/shr_infnan_mod.F90)
+endif()
+if(WERROR)
+   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror --warn-no-unused-dummy-argument --warn-no-missing-include-dirs -ffree-line-length-none")
 
+   set_source_files_properties(src/shr_mpi_mod.F90 src/shr_reprosum_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error;-fallow-argument-mismatch")
+   # This flag seems to be needed for temp variables generated by the compiler version in jammy
+   set_source_files_properties(src/shr_assert_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=maybe-uninitialized")
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=cpp")
+   set_source_files_properties(src/shr_cal_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion")
 
+endif()
 
-#===== Fortran Source Generation with GenF90 =====
-foreach (SRC_FILE IN LISTS GENF90SOURCES)
-  list(APPEND SHAREGENF90SRC ${SRC_FILE})
-  add_custom_command (OUTPUT ${SRC_FILE}
-    COMMAND ${GENF90_PATH}/genf90.pl
-    ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in > ${SRC_FILE}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}.in genf90)
-endforeach ()
+# Among other things, this handles the genf90 generation
+add_subdirectory(src)
 
- file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
- file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
+file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
+file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
 
- file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src)
+add_library(csm_share STATIC ${CSOURCES} ${FSOURCES} ${share_genf90_sources} )
+declare_generated_dependencies(csm_share "${share_genf90_sources}")
 
- add_library(csm_share STATIC ${CSOURCES} ${FSOURCES} ${SHAREGENF90SRC} )
+# Add these include directories to all targets, including unit tests:
+include_directories(include RandNum/include)
+# But just add this to csm_share (adding this to all targets causes a failure in the
+# shr_cal tests for some reason, and is probably unnecessary):
+target_include_directories(csm_share PRIVATE ${CMAKE_BINARY_DIR})
 
- if(WERROR)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Werror --warn-no-unused-dummy-argument --warn-no-missing-include-dirs -ffree-line-length-none")
-
-    set_source_files_properties(src/shr_mpi_mod.F90 src/shr_reprosum_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error;-fallow-argument-mismatch")
-    # This flag seems to be needed for temp variables generated by the compiler version in jammy
-    set_source_files_properties(src/shr_assert_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=maybe-uninitialized")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wno-error=cpp")
-    set_source_files_properties(src/shr_cal_mod.F90 PROPERTIES COMPILE_OPTIONS "-Wno-error=conversion")
-
- endif()
- add_dependencies (csm_share genf90)
- target_include_directories(csm_share PRIVATE include RandNum/include ${CMAKE_BINARY_DIR})
-
- if(UNITTESTS)
-   find_package(PFUNIT REQUIRED)
+if(UNITTESTS)
    # need to turn the warning check off for pfunit
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ ")
    add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
    add_subdirectory(${CMAKE_SOURCE_DIR}/test/unit ${CMAKE_BINARY_DIR}/unittests)
-
 endif()

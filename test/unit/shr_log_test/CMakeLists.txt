@@ -11,3 +11,7 @@ add_pfunit_ctest(shr_log
   OTHER_SOURCES "${test_sources}")
 
 declare_generated_dependencies(shr_log "${share_genf90_sources}")
+
+target_link_libraries(shr_log esmf)
+# The following adds all dependencies of ESMF, including PIO, NetCDF, etc.:
+target_link_libraries(shr_log ESMF::ESMF)

@@ -13,3 +13,7 @@ add_pfunit_ctest(spfn
   OTHER_SOURCES "${test_sources}")
 
 declare_generated_dependencies(spfn "${share_genf90_sources}")
+
+target_link_libraries(spfn esmf)
+# The following adds all dependencies of ESMF, including PIO, NetCDF, etc.:
+target_link_libraries(spfn ESMF::ESMF)

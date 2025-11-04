@@ -30,3 +30,5 @@ declare_generated_dependencies(shr_cal_mod "${share_genf90_sources}")
 #set_target_properties(shr_cal_mod PROPERTIES LINK_FLAGS "${ESMF_F90ESMFLINKLIBS}")
 
 target_link_libraries(shr_cal_mod esmf pioc netcdff netcdf)
+# The following adds all dependencies of ESMF, including PIO, NetCDF, etc.:
+target_link_libraries(shr_cal_mod ESMF::ESMF)

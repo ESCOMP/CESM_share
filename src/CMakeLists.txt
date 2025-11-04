@@ -1,10 +1,11 @@
-set(genf90_files shr_infnan_mod.F90.in shr_assert_mod.F90.in)
+set(genf90_files shr_assert_mod.F90.in shr_frz_mod.F90.in shr_infnan_mod.F90.in)
 
 process_genf90_source_list("${genf90_files}" ${CMAKE_CURRENT_BINARY_DIR}
   share_genf90_sources)
 
 sourcelist_to_parent(share_genf90_sources)
 
+# share_sources is currently just used for unit tests
 list(APPEND share_sources "${share_genf90_sources}")
 
 list(APPEND share_sources
@@ -29,9 +30,3 @@ list(APPEND share_sources
 
 sourcelist_to_parent(share_sources)
 
-if (DEFINED ENV{ESMF_ROOT})
-  list(APPEND CMAKE_MODULE_PATH $ENV{ESMF_ROOT}/cmake)
-endif()
-message("ESMF cmake is ${CMAKE_MODULE_PATH}")
-find_package(ESMF REQUIRED)
-set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS}")
