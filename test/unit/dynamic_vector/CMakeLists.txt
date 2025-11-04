@@ -89,3 +89,5 @@ add_pfunit_ctest(dynamic_vector
 declare_generated_dependencies(dynamic_vector "${share_genf90_sources}")
 
 target_link_libraries(dynamic_vector esmf)
+# The following adds all dependencies of ESMF, including PIO, NetCDF, etc.:
+target_link_libraries(dynamic_vector ESMF::ESMF)

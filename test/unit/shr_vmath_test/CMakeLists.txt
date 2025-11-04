@@ -13,3 +13,5 @@ add_test(vmath vmath_test_exe)
 declare_generated_dependencies(vmath_test_exe "${share_genf90_sources}")
 
 target_link_libraries(vmath_test_exe esmf)
+# The following adds all dependencies of ESMF, including PIO, NetCDF, etc.:
+target_link_libraries(vmath_test_exe ESMF::ESMF)

@@ -77,14 +77,6 @@ endif()
 find_package(ESMF REQUIRED)
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${ESMF_F90COMPILEPATHS} ")
 link_libraries("-L${ESMF_LIBSDIR}")
-# The following adds all directories and libraries needed when linking ESMF, including any
-# dependencies of ESMF. (But note that this does *not* include the "-lesmf" itself). In
-# particular, note that this includes any link flags needed to link against PIO, which is
-# needed on some systems (including derecho); bringing in these PIO-related link flags via
-# this ESMF mechanism allows us to avoid explicitly including PIO as a link library, which
-# wouldn't work on systems where there is no separate PIO library and instead ESMF is
-# built with its internal PIO library.
-link_libraries(${ESMF_INTERFACE_LINK_LIBRARIES})
 
 if("${COMPILER}" STREQUAL "nag")
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -D__NAG__")
