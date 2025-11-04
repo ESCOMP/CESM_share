@@ -40,15 +40,13 @@ jobs:
       - name: Checkout CIME
         uses: actions/checkout@v4
         with:
-          repository: billsacks/cime
+          repository: ESMCI/cime
           path: cime
-          ref: unit_test_additions_for_cesm_share
       - name: Checkout ccs_config
         uses: actions/checkout@v4
         with:
-          repository: billsacks/ccs_config_cesm
+          repository: ESMCI/ccs_config_cesm
           path: ccs_config
-          ref: gfortran10_default
       - name: Cache PARALLELIO
         id: cache-PARALLELIO
         uses: actions/cache@v4
