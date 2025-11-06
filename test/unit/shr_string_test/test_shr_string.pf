@@ -13,6 +13,115 @@ module test_shr_string
 contains
 
   ! ------------------------------------------------------------------------
+  ! Tests of shr_string_listIsValid
+  ! ------------------------------------------------------------------------
+
+  @Test
+  subroutine test_shr_string_listIsValid_emptyList()
+     ! An empty list should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = ""
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_emptyList
+
+  @Test
+  subroutine test_shr_string_listIsValid_firstCharDelimiter()
+     ! An list where the first character is a delimiter should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = ":ab:cd"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_firstCharDelimiter
+
+  @Test
+  subroutine test_shr_string_listIsValid_lastCharDelimiter()
+     ! An list where the last character is a delimiter should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:cd:"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_lastCharDelimiter
+
+  @Test
+  subroutine test_shr_string_listIsValid_whitespace()
+     ! An list where there is whitespace in the middle of a field name should be
+     ! considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:c d:ef"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_whitespace
+
+  @Test
+  subroutine test_shr_string_listIsValid_zeroLengthField()
+     ! An list with a zero-length field should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab::ef"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_zeroLengthField
+
+  @Test
+  subroutine test_shr_string_listIsValid_oneField()
+     ! An list with a single field should be considered valid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertTrue(is_valid)
+     @assertEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_oneField
+
+  @Test
+  subroutine test_shr_string_listIsValid_twoFields()
+     ! An list with two fields should be considered valid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:cd"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertTrue(is_valid)
+     @assertEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_twoFields
+
+  @Test
+  subroutine test_shr_string_listIsValid_threeFields()
+     ! An list with three fields should be considered valid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:cd:ef"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertTrue(is_valid)
+     @assertEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_threeFields
+
+  ! ------------------------------------------------------------------------
   ! Tests of shr_string_leftAlign_and_convert_tabs
   ! ------------------------------------------------------------------------
 
