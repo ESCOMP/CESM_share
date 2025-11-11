@@ -15,7 +15,7 @@ module shr_abort_mod
 
 contains
 
-  subroutine shr_abort_abort(string,rc)
+  subroutine shr_abort_abort(string,rc, line, file)
     ! Replacement for shr_abort_abort that throws a pfunit exception rather than aborting
     !
     ! This can be used to test expected errors (i.e., failure testing).
@@ -43,6 +43,8 @@ contains
     !----- arguments -----
     character(len=*)    , intent(in), optional :: string  ! error message string
     integer(shr_kind_in), intent(in), optional :: rc      ! error code
+    integer(shr_kind_in), intent(in), optional :: line    ! Line number in file (not used)
+    character(len=*), intent(in), optional :: file        ! Fielename (not used)
 
     !----- locals -----
     integer(shr_kind_in) :: my_rc
