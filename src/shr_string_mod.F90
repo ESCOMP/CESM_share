@@ -1034,7 +1034,7 @@ contains
     ! !INPUT/OUTPUT PARAMETERS:
 
     character(*)                 ,intent(in)  :: list     ! list/string
-    character(*), allocatable    ,intent(out) :: names(:) ! k-th name in list
+    character(*), allocatable    ,intent(out) :: names(:) ! array of all names in list
     integer(SHR_KIND_IN),optional,intent(out) :: rc       ! return code
 
     !EOP
