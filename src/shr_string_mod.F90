@@ -1085,7 +1085,7 @@ contains
              ! been caught by shr_string_listIsValid. Nevertheless, we check for these
              ! possibilities here so that we can issue a meaningful error message if an
              ! issue somehow slipped through the cracks.
-             call shr_string_abort(subName//" ERROR: internal inconsistency processing list = "//trim(list))
+             call shr_string_abort(subName//" ERROR: internal inconsistency processing list = <"//trim(list)//">")
           end if
 
           if (num_chars > len(names)) then
