@@ -7,3 +7,6 @@ buildlib.csm_sharec
 # Ignore emacs backup files
 *~
 
+# Typical directory used for unit test build
+/unit_tests.temp/
+

@@ -13,6 +13,193 @@ module test_shr_string
 contains
 
   ! ------------------------------------------------------------------------
+  ! Tests of shr_string_listIsValid
+  ! ------------------------------------------------------------------------
+
+  @Test
+  subroutine test_shr_string_listIsValid_emptyList()
+     ! An empty list should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = ""
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_emptyList
+
+  @Test
+  subroutine test_shr_string_listIsValid_firstCharDelimiter()
+     ! An list where the first character is a delimiter should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = ":ab:cd"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_firstCharDelimiter
+
+  @Test
+  subroutine test_shr_string_listIsValid_lastCharDelimiter()
+     ! An list where the last character is a delimiter should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:cd:"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_lastCharDelimiter
+
+  @Test
+  subroutine test_shr_string_listIsValid_whitespace()
+     ! An list where there is whitespace in the middle of a field name should be
+     ! considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:c d:ef"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_whitespace
+
+  @Test
+  subroutine test_shr_string_listIsValid_zeroLengthField()
+     ! An list with a zero-length field should be considered invalid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab::ef"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertFalse(is_valid)
+     @assertNotEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_zeroLengthField
+
+  @Test
+  subroutine test_shr_string_listIsValid_oneField()
+     ! An list with a single field should be considered valid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertTrue(is_valid)
+     @assertEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_oneField
+
+  @Test
+  subroutine test_shr_string_listIsValid_twoFields()
+     ! An list with two fields should be considered valid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:cd"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertTrue(is_valid)
+     @assertEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_twoFields
+
+  @Test
+  subroutine test_shr_string_listIsValid_threeFields()
+     ! An list with three fields should be considered valid
+     character(len=32) :: list
+     logical :: is_valid
+     integer :: rc
+
+     list = "ab:cd:ef"
+     is_valid = shr_string_listIsValid(list, rc)
+     @assertTrue(is_valid)
+     @assertEqual(rc, 0)
+  end subroutine test_shr_string_listIsValid_threeFields
+
+  ! ------------------------------------------------------------------------
+  ! Tests of shr_string_listGetAllNames
+  ! ------------------------------------------------------------------------
+
+  @Test
+  subroutine test_shr_string_listGetAllNames_length1strlen1()
+    ! Test shr_string_listGetAllNames with a single-element list, with string length 1
+    character(len=32) :: list
+    character(len=4), allocatable :: names(:)
+    integer :: rc
+    character(len=4), parameter :: expected_names(1) = ["x   "]
+
+    list = "x"
+    call shr_string_listGetAllNames(list, names, rc)
+    @assertEqual(0, rc)
+    @assertEqual(1, size(names))
+    @assertEqual(expected_names, names)
+  end subroutine test_shr_string_listGetAllNames_length1strlen1
+
+  @Test
+  subroutine test_shr_string_listGetAllNames_length1strlen3()
+    ! Test shr_string_listGetAllNames with a single-element list, with string length 3
+    character(len=32) :: list
+    character(len=4), allocatable :: names(:)
+    integer :: rc
+    character(len=4), parameter :: expected_names(1) = ["xyz "]
+
+    list = "xyz"
+    call shr_string_listGetAllNames(list, names, rc)
+    @assertEqual(0, rc)
+    @assertEqual(1, size(names))
+    @assertEqual(expected_names, names)
+  end subroutine test_shr_string_listGetAllNames_length1strlen3
+
+  @Test
+  subroutine test_shr_string_listGetAllNames_length5strlen1()
+    ! Test shr_string_listGetAllNames with a 5-element list, with string length 1
+    character(len=32) :: list
+    character(len=4), allocatable :: names(:)
+    integer :: rc
+    character(len=4), parameter :: expected_names(5) = ["a   ", "b   ", "c   ", "d   ", "e   "]
+
+    list = "a:b:c:d:e"
+    call shr_string_listGetAllNames(list, names, rc)
+    @assertEqual(0, rc)
+    @assertEqual(5, size(names))
+    @assertEqual(expected_names, names)
+  end subroutine test_shr_string_listGetAllNames_length5strlen1
+
+  @Test
+  subroutine test_shr_string_listGetAllNames_length5strlenVaries()
+    ! Test shr_string_listGetAllNames with a 5-element list, with varying string length
+    character(len=32) :: list
+    character(len=4), allocatable :: names(:)
+    integer :: rc
+    ! Note that one of the names here hits the max strlen of names (4), which tests to
+    ! make sure we don't inappropriately abort for that max length.
+    character(len=4), parameter :: expected_names(5) = ["abc ", "defg", "hi  ", "j   ", "klm "]
+
+    list = "abc:defg:hi:j:klm"
+    call shr_string_listGetAllNames(list, names, rc)
+    @assertEqual(0, rc)
+    @assertEqual(5, size(names))
+    @assertEqual(expected_names, names)
+  end subroutine test_shr_string_listGetAllNames_length5strlenVaries
+
+  @Test
+  subroutine test_shr_string_listGetAllNames_tooLong()
+    ! Test shr_string_listGetAllNames with a too-long element
+    character(len=32) :: list
+    character(len=4), allocatable :: names(:)
+    integer :: rc
+
+    list = "abc:defgh:ijk"
+    call shr_string_listGetAllNames(list, names, rc)
+    @assertExceptionRaised("ABORTED: (shr_string_listGetAllNames)  ERROR: an element of list <abc:defgh:ijk> exceeds the max char length of the output variable")
+  end subroutine test_shr_string_listGetAllNames_tooLong
+
+  ! ------------------------------------------------------------------------
   ! Tests of shr_string_leftAlign_and_convert_tabs
   ! ------------------------------------------------------------------------
 

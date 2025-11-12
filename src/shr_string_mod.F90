@@ -50,6 +50,7 @@ module shr_string_mod
   public :: shr_string_listGetIndex    ! Get index of field
   public :: shr_string_listGetIndexF   ! function version of listGetIndex
   public :: shr_string_listGetName     ! get k-th field name
+  public :: shr_string_listGetAllNames ! get all field names
   public :: shr_string_listIntersect   ! get intersection of two field lists
   public :: shr_string_listUnion       ! get union of two field lists
   public :: shr_string_listDiff        ! get set difference of two field lists
@@ -954,7 +955,7 @@ contains
     !EOP
 
     !----- local -----
-    integer(SHR_KIND_IN)   :: i,n   ! generic indecies
+    integer(SHR_KIND_IN)   :: i,n     ! generic indices
     integer(SHR_KIND_IN)   :: kFlds   ! number of fields in list
     integer(SHR_KIND_IN)   :: i0,i1   ! name = list(i0:i1)
     integer(SHR_KIND_IN)   :: rCode   ! return code
@@ -1010,6 +1011,106 @@ contains
     if (debug>1) call shr_timer_stop (t01)
 
   end subroutine shr_string_listGetName
+
+  !===============================================================================
+  !BOP ===========================================================================
+  !
+  ! !IROUTINE: shr_string_listGetAllNames -- Get names of all fields in list
+  !
+  ! !DESCRIPTION:
+  !     Get names of all fields in list
+  !     \newline
+  !     Allocates the output array
+  !     \newline
+  !     call shr\_string\_listGetAllNames(list,names,rc)
+  !
+  ! !REVISION HISTORY:
+  !     2025-Nov-10 - W. Sacks
+  !
+  ! !INTERFACE: ------------------------------------------------------------------
+
+  subroutine shr_string_listGetAllNames(list,names,rc)
+
+    ! !INPUT/OUTPUT PARAMETERS:
+
+    character(*)                 ,intent(in)  :: list     ! list/string
+    character(*), allocatable    ,intent(out) :: names(:) ! array of all names in list
+    integer(SHR_KIND_IN),optional,intent(out) :: rc       ! return code
+
+    !EOP
+
+    !----- local -----
+    integer(SHR_KIND_IN)   :: num_fields ! number of fields in list
+    integer(SHR_KIND_IN)   :: n          ! current field number
+    integer(SHR_KIND_IN)   :: num_chars  ! number of characters in this field
+    integer(SHR_KIND_IN)   :: i0,i1      ! name = list(i0:i1)
+    integer(SHR_KIND_IN)   :: rCode      ! return code
+    integer(SHR_KIND_IN)   :: t01 = 0    ! timer
+
+    !----- formats -----
+    character(*),parameter :: subName =   "(shr_string_listGetAllNames) "
+    character(*),parameter :: F00     = "('(shr_string_listGetAllNames) ',4a)"
+
+    !-------------------------------------------------------------------------------
+    ! Notes:
+    !-------------------------------------------------------------------------------
+
+    if (debug>1 .and. t01<1) call shr_timer_get(t01,subName)
+    if (debug>1) call shr_timer_start(t01)
+
+    rCode = 0
+
+    !--- check that this is a valid list ---
+    if (.not. shr_string_listIsValid(list,rCode) ) then
+       write(s_logunit,F00) "ERROR: invalid list = <",trim(list),">"
+       call shr_string_abort(subName//" ERROR: invalid list = <"//trim(list)//">")
+    end if
+
+    num_fields = shr_string_listGetNum(list)
+
+    allocate(names(num_fields))
+    i0 = 1
+    do n = 1, num_fields
+       ! Invariant at this point: i0 is the index of the first character of field n
+
+       if (n < num_fields) then
+          ! Find index of last character of field n
+          num_chars = index(list(i0:), listDel) - 1
+
+          if (num_chars < 1) then
+             ! This implies that either listDel wasn't found (in which case index will
+             ! return 0) or that listDel is the next character (in which case index will
+             ! return 1). Neither of these should happen: the first case implies an
+             ! inconsistency with shr_string_listGetNum, and the second case should have
+             ! been caught by shr_string_listIsValid. Nevertheless, we check for these
+             ! possibilities here so that we can issue a meaningful error message if an
+             ! issue somehow slipped through the cracks.
+             call shr_string_abort(subName//" ERROR: internal inconsistency processing list = <"//trim(list)//">")
+          end if
+
+          if (num_chars > len(names)) then
+             call shr_string_abort(subName//" ERROR: an element of list <"//trim(list)// &
+                  "> exceeds the max char length of the output variable")
+          end if
+
+          i1 = i0 + num_chars - 1
+       else
+          ! Special case: the last field ends at the end of the string
+          i1 = len_trim(list)
+       end if
+
+       ! Store this field
+       names(n) = list(i0:i1)
+
+       ! The next field starts two characters after the end of the current field (skipping
+       ! the delimiter).
+       i0 = i1 + 2
+    end do
+
+    if (present(rc)) rc = rCode
+    if (debug>1) call shr_timer_stop (t01)
+
+  end subroutine shr_string_listGetAllNames
 
   !===============================================================================
   !BOP ===========================================================================
