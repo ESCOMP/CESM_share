@@ -19,7 +19,7 @@ module shr_wtracers_mod
    use shr_kind_mod      , only : CS=>SHR_KIND_CS, CM=>SHR_KIND_CM, CXX=>SHR_KIND_CXX
    use shr_log_mod       , only : shr_log_error
    use shr_log_mod       , only : s_logunit=>shr_log_Unit, s_loglev=>shr_log_Level
-   use shr_string_mod    , only : shr_string_listGetAllNames
+   use shr_string_mod    , only : shr_string_listGetAllNames, shr_string_toUpper
    use shr_sys_mod       , only : shr_sys_abort
    use nuopc_shr_methods , only : chkerr
    use NUOPC             , only : NUOPC_CompAttributeGet
@@ -134,6 +134,7 @@ contains
       ! !LOCAL VARIABLES
       integer :: localrc
       character(len=CXX) :: cvalue
+      character(len=CXX) :: cvalue_upper
       logical :: isPresent, isSet
       character(len=CS), allocatable :: tracer_initial_ratios_str(:)
       character(len=*), parameter :: subname='shr_wtracers_parse_attributes'
@@ -170,7 +171,8 @@ contains
             return
          end if
       else
-         call shr_string_listGetAllNames(cvalue, tracer_species_names, rc=localrc)
+         cvalue_upper = shr_string_toUpper(cvalue)
+         call shr_string_listGetAllNames(cvalue_upper, tracer_species_names, rc=localrc)
          if (localrc /= 0) then
             call shr_log_error(subname//": error processing water_tracer_species", rc=rc)
             return
