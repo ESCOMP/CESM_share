@@ -1062,8 +1062,8 @@ contains
 
     !--- check that this is a valid list ---
     if (.not. shr_string_listIsValid(list,rCode) ) then
-       write(s_logunit,F00) "ERROR: invalid list = ",trim(list)
-       call shr_string_abort(subName//" ERROR: invalid list = "//trim(list))
+       write(s_logunit,F00) "ERROR: invalid list = <",trim(list),">"
+       call shr_string_abort(subName//" ERROR: invalid list = <"//trim(list)//">")
     end if
 
     num_fields = shr_string_listGetNum(list)
