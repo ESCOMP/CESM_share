@@ -35,6 +35,7 @@ module shr_wtracers_mod
 
    public :: shr_wtracers_init              ! initialize water tracer information
    public :: shr_wtracers_finalize          ! finalize water tracer information
+   public :: shr_wtracers_present           ! return true if there are water tracers in this simulation
    public :: shr_wtracers_get_num_tracers   ! get number of water tracers in this simulation
    public :: shr_wtracers_get_name          ! get the name of a given tracer
    public :: shr_wtracers_get_species_type  ! get the species type value associated with a given tracer
@@ -303,16 +304,16 @@ contains
 
       rc = ESMF_SUCCESS
 
+      ! The use of the various getters in the following code is partly for the sake of
+      ! testing these getters to ensure they work right (via inspection of the output).
       if (s_loglev > 0 .and. maintask) then
-         if (num_tracers > 0) then
+         if (shr_wtracers_present()) then
             write(s_logunit, '(A)') "Water Tracers:"
          else
             write(s_logunit, '(A)') "No Water Tracers in this simulation"
          end if
-         do i = 1, num_tracers
+         do i = 1, shr_wtracers_get_num_tracers()
             write(s_logunit, '(3X,A,I0,A)') "Tracer #", i, ":"
-            ! The use of the various getters here is partly for the sake of testing these
-            ! getters to ensure they work right (via inspection of the output).
             write(s_logunit, '(6X,A,A)') "Name: ", trim(shr_wtracers_get_name(i))
             write(s_logunit, '(6X,A,A,A,I0,A)') "Species: ", trim(shr_wtracers_get_species_name(i)), &
                  " (", shr_wtracers_get_species_type(i), ")"
@@ -343,6 +344,25 @@ contains
          call shr_sys_abort(subname//" ERROR: tracer_num out of range")
       end if
    end subroutine shr_wtracers_check_tracer_num
+
+   !-----------------------------------------------------------------------
+   function shr_wtracers_present()
+      !
+      ! !DESCRIPTION:
+      ! Return true if there are water tracers in this simulation
+      !
+      ! !ARGUMENTS
+      logical :: shr_wtracers_present  ! function result
+      !
+      ! !LOCAL VARIABLES:
+      character(len=*), parameter :: subname='shr_wtracers_present'
+      !-----------------------------------------------------------------------
+      if (.not. water_tracers_initialized) then
+         call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
+      end if
+
+      shr_wtracers_present = (num_tracers > 0)
+   end function shr_wtracers_present
 
    !-----------------------------------------------------------------------
    function shr_wtracers_get_num_tracers()
