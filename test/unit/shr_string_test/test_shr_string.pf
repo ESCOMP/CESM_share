@@ -13,6 +13,118 @@ module test_shr_string
 contains
 
   ! ------------------------------------------------------------------------
+  ! Tests of shr_string_withoutSuffix
+  ! ------------------------------------------------------------------------
+
+  @Test
+  subroutine test_shr_string_withoutSuffix_suffixAbsent()
+    character(len=8) :: in_str
+    character(len=8) :: out_str
+    logical :: has_suffix
+
+    in_str = "test_foo"
+    call shr_string_withoutSuffix( &
+         in_str = in_str, &
+         suffix = "_str", &
+         has_suffix = has_suffix, &
+         out_str = out_str)
+
+    @assertFalse(has_suffix)
+    @assertEqual(in_str, out_str)
+  end subroutine test_shr_string_withoutSuffix_suffixAbsent
+
+  @Test
+  subroutine test_shr_string_withoutSuffix_endsWithSuffix()
+    character(len=8) :: in_str
+    character(len=8) :: out_str
+    logical :: has_suffix
+
+    in_str = "test_str"
+    call shr_string_withoutSuffix( &
+         in_str = in_str, &
+         suffix = "_str", &
+         has_suffix = has_suffix, &
+         out_str = out_str)
+
+    @assertTrue(has_suffix)
+    @assertEqual("test", out_str)
+  end subroutine test_shr_string_withoutSuffix_endsWithSuffix
+
+  @Test
+  subroutine test_shr_string_withoutSuffix_endsWithSuffixPlusWhitespace()
+    character(len=10) :: in_str
+    character(len=10) :: out_str
+    logical :: has_suffix
+
+    in_str = "test_str  "
+    call shr_string_withoutSuffix( &
+         in_str = in_str, &
+         suffix = "_str", &
+         has_suffix = has_suffix, &
+         out_str = out_str)
+
+    @assertTrue(has_suffix)
+    @assertEqual("test", out_str)
+  end subroutine test_shr_string_withoutSuffix_endsWithSuffixPlusWhitespace
+
+  @Test
+  subroutine test_shr_string_withoutSuffix_suffixInMiddle()
+    character(len=10) :: in_str
+    character(len=10) :: out_str
+    logical :: has_suffix
+
+    in_str = "test_str_1"
+    call shr_string_withoutSuffix( &
+         in_str = in_str, &
+         suffix = "_str", &
+         has_suffix = has_suffix, &
+         out_str = out_str)
+
+    @assertFalse(has_suffix)
+    @assertEqual(in_str, out_str)
+  end subroutine test_shr_string_withoutSuffix_suffixInMiddle
+
+  @Test
+  subroutine test_shr_string_withoutSuffix_stringIsSuffix()
+    ! Note that has_suffix is set to false if the input string exactly matches the suffix.
+    ! It's debatable what the behavior should be in this situation, but we have chosen to
+    ! set has_suffix to false in this case because it's easier to implement and avoids
+    ! passing back a 0-length string, which might cause problems.
+    character(len=8) :: in_str
+    character(len=8) :: out_str
+    logical :: has_suffix
+
+    in_str = "_str    "
+    call shr_string_withoutSuffix( &
+         in_str = in_str, &
+         suffix = "_str", &
+         has_suffix = has_suffix, &
+         out_str = out_str)
+
+    @assertFalse(has_suffix)
+    @assertEqual(in_str, out_str)
+  end subroutine test_shr_string_withoutSuffix_stringIsSuffix
+
+  @Test
+  subroutine test_shr_string_withoutSuffix_suffixLongerThanStr()
+    character(len=8) :: in_str
+    character(len=8) :: out_str
+    logical :: has_suffix
+
+    ! The suffix is longer than the trimmed length of the string (though not longer than
+    ! the full string length)
+    in_str = "t       "
+    call shr_string_withoutSuffix( &
+         in_str = in_str, &
+         suffix = "_str", &
+         has_suffix = has_suffix, &
+         out_str = out_str)
+
+    @assertFalse(has_suffix)
+    @assertEqual(in_str, out_str)
+  end subroutine test_shr_string_withoutSuffix_suffixLongerThanStr
+
+  ! ------------------------------------------------------------------------
   ! Tests of shr_string_leftAlign_and_convert_tabs
   ! ------------------------------------------------------------------------
 

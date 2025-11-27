@@ -38,6 +38,7 @@ module shr_string_mod
   public :: shr_string_getParentDir    ! For a pathname get the parent directory name
   public :: shr_string_lastIndex       ! Index of last substr in str
   public :: shr_string_endIndex        ! Index of end of substr in str
+  public :: shr_string_withoutSuffix   ! Return version of string with a given suffix removed
   public :: shr_string_leftalign_and_convert_tabs ! remove leading white space and convert all tabs to spaces
   public :: shr_string_convert_tabs    ! Convert all tabs to spaces
   public :: shr_string_alphanum        ! remove all non alpha-numeric characters
@@ -406,6 +407,89 @@ contains
     if (debug>1) call shr_timer_stop (t01)
 
   end function shr_string_endIndex
+
+  !===============================================================================
+  !BOP ===========================================================================
+  !
+  ! !IROUTINE: shr_string_withoutSuffix
+  !
+  ! !DESCRIPTION:
+  !     Return version of in_str with a given suffix removed (if the string ends with that
+  !     suffix), along with a logical (has_suffix) specifying whether the original string
+  !     ended with that suffix.
+  !     \newline
+  !     If in_str is *just* the given suffix without any previous text, has_suffix is set
+  !     to false.
+  !     \newline
+  !     If has_suffix is determined to be false, then out_str is set to in_str.
+  !     \newline
+  !     out_str must be long enough to hold the result - so should be at least as long as
+  !     in_str (this is not checked).
+  !     \newline
+  !     call shr\_string\_withoutSuffix(in_str,suffix,has_suffix,out_str,rc)
+  !
+  ! !REVISION HISTORY:
+  !     2025-Nov-17 - W. Sacks, first version
+  !
+  ! !INTERFACE: ------------------------------------------------------------------
+
+  subroutine shr_string_withoutSuffix(in_str,suffix,has_suffix,out_str,rc)
+
+    ! !INPUT/OUTPUT PARAMETERS:
+
+    character(len=*), intent(in)  :: in_str      ! input string
+    character(len=*), intent(in)  :: suffix      ! suffix to check for and remove
+    logical         , intent(out) :: has_suffix  ! true if in_str ends with suffix
+    character(len=*), intent(out) :: out_str     ! output string
+    integer(SHR_KIND_IN),optional,intent(out) :: rc       ! return code
+
+    !EOP
+
+    !----- local -----
+    integer(SHR_KIND_IN) :: in_len, suffix_len
+    character(len=len_trim(suffix)) :: last_chars
+    integer(SHR_KIND_IN) :: rCode      ! return code
+    integer(SHR_KIND_IN) :: t01 = 0    ! timer
+
+    !----- formats -----
+    character(*),parameter :: subName =   "(shr_string_withoutSuffix) "
+    character(*),parameter :: F00     = "('(shr_string_withoutSuffix) ',4a)"
+
+    !-------------------------------------------------------------------------------
+    ! Notes:
+    !
+    ! Note that has_suffix is set to false if the input string exactly matches the suffix.
+    ! It's debatable what the behavior should be in this situation, but we have chosen to
+    ! set has_suffix to false in this case because it's easier to implement and avoids
+    ! passing back a 0-length string, which might cause problems.
+    !-------------------------------------------------------------------------------
+
+    if (debug>1 .and. t01<1) call shr_timer_get(t01,subName)
+    if (debug>1) call shr_timer_start(t01)
+
+    rCode = 0
+
+    in_len = len_trim(in_str)
+    suffix_len = len_trim(suffix)
+
+    if (in_len <= suffix_len) then
+       has_suffix = .false.
+       out_str = in_str
+    else
+       last_chars = in_str((in_len - suffix_len + 1):in_len)
+       if (last_chars == suffix) then
+          has_suffix = .true.
+          out_str = in_str(1:(in_len - suffix_len))
+       else
+          has_suffix = .false.
+          out_str = in_str
+       end if
+    end if
+
+    if (present(rc)) rc = rCode
+    if (debug>1) call shr_timer_stop (t01)
+
+  end subroutine shr_string_withoutSuffix
 
   !===============================================================================
   !BOP ===========================================================================
