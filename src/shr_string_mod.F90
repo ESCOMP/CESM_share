@@ -426,6 +426,8 @@ contains
   !     out_str must be long enough to hold the result - so should be at least as long as
   !     in_str (this is not checked).
   !     \newline
+  !     If all that is desired is the has_suffix logical, out_str can be omitted.
+  !     \newline
   !     call shr\_string\_withoutSuffix(in_str,suffix,has_suffix,out_str,rc)
   !
   ! !REVISION HISTORY:
@@ -440,7 +442,7 @@ contains
     character(len=*), intent(in)  :: in_str      ! input string
     character(len=*), intent(in)  :: suffix      ! suffix to check for and remove
     logical         , intent(out) :: has_suffix  ! true if in_str ends with suffix
-    character(len=*), intent(out) :: out_str     ! output string
+    character(len=*), optional, intent(out)   :: out_str  ! output string
     integer(SHR_KIND_IN),optional,intent(out) :: rc       ! return code
 
     !EOP
@@ -474,15 +476,21 @@ contains
 
     if (in_len <= suffix_len) then
        has_suffix = .false.
-       out_str = in_str
+       if (present(out_str)) then
+          out_str = in_str
+       end if
     else
        last_chars = in_str((in_len - suffix_len + 1):in_len)
        if (last_chars == suffix) then
           has_suffix = .true.
-          out_str = in_str(1:(in_len - suffix_len))
+          if (present(out_str)) then
+             out_str = in_str(1:(in_len - suffix_len))
+          end if
        else
           has_suffix = .false.
-          out_str = in_str
+          if (present(out_str)) then
+             out_str = in_str
+          end if
        end if
     end if
 
