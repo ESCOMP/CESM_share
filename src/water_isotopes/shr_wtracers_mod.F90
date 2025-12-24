@@ -301,7 +301,6 @@ contains
       !
       ! !LOCAL VARIABLES
       integer :: i
-      character(len=CM) :: msg
       character(len=*), parameter :: subname='shr_wtracers_print'
       !---------------------------------------------------------------
 
