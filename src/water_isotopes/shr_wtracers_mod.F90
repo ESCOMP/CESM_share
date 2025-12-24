@@ -72,6 +72,9 @@ module shr_wtracers_mod
    integer, parameter, public :: WATER_SPECIES_HDO = 3
    integer, parameter, public :: WATER_SPECIES_MAXVAL = 3
 
+   ! Suffix for water tracer field names
+   character(len=*), parameter, public :: WTRACERS_SUFFIX = "_wtracers"
+
    !--------------------------------------------------------------------------
    ! Private data
    !--------------------------------------------------------------------------
