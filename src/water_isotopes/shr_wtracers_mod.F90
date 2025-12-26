@@ -20,6 +20,7 @@ module shr_wtracers_mod
    use shr_log_mod       , only : shr_log_error
    use shr_log_mod       , only : s_logunit=>shr_log_Unit, s_loglev=>shr_log_Level
    use shr_string_mod    , only : shr_string_listGetAllNames, shr_string_toUpper
+   use shr_infnan_mod    , only : shr_infnan_isnan
    use shr_sys_mod       , only : shr_sys_abort
    use nuopc_shr_methods , only : chkerr
    use NUOPC             , only : NUOPC_CompAttributeGet
@@ -42,6 +43,7 @@ module shr_wtracers_mod
    public :: shr_wtracers_get_species_name  ! get the species name associated with a given tracer
    public :: shr_wtracers_is_isotope        ! return true if a given tracer is an isotope
    public :: shr_wtracers_get_initial_ratio ! get the initial ratio for a given tracer
+   public :: shr_wtracers_check_tracer_ratios ! check tracer ratios against expectations
 
    !--------------------------------------------------------------------------
    ! Private interfaces
@@ -489,6 +491,94 @@ contains
 
       shr_wtracers_get_initial_ratio = tracer_initial_ratios(tracer_num)
    end function shr_wtracers_get_initial_ratio
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_check_tracer_ratios(tracers, bulk, name)
+      !
+      ! !DESCRIPTION: Check tracer ratios (tracer/bulk) against expectations
+      !
+      ! Aborts if any inconsistencies are found
+      !
+      ! Should only be called in simulations set up to maintain constant water tracer
+      ! ratios: in general, water tracers will deviate from their initial, fixed ratios,
+      ! and so it makes no sense to perform these checks since they will always fail.
+      !
+      ! !ARGUMENTS
+      real(r8), intent(in) :: tracers(:,:)  ! dimensioned [tracerNum, gridcell]
+      real(r8), intent(in) :: bulk(:)
+      character(len=*), intent(in) :: name  ! for diagnostic output
+      !
+      ! !LOCAL VARIABLES
+      integer :: n, i
+      logical :: arrays_equal
+      integer :: diff_tracer, diff_loc
+      real(r8) :: val_bulk, val_tracer
+
+      real(r8), parameter :: tolerance = 1.0e-7_r8
+
+      character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios'
+      !-----------------------------------------------------------------------
+      if (.not. water_tracers_initialized) then
+         call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
+      end if
+      if (size(tracers, 1) /= num_tracers) then
+         call shr_sys_abort(subname//" ERROR: unexpected number of tracers")
+      end if
+      if (size(tracers, 2) /= size(bulk)) then
+         call shr_sys_abort(subname//" ERROR: inconsistent sizes for tracers and bulk")
+      end if
+
+      arrays_equal = .true.
+      tracer_loop: do n = 1, num_tracers
+         ! We may eventually want a mechanism to denote certain tracers as for-checking
+         ! and others not-for-checking (probably via another nuopc attribute parallel to
+         ! the other water tracers attributes). If we do, we could check that flag here
+         ! for tracer #n and go on to the next tracer if this is a not-for-checking
+         ! tracer.
+
+         do i = 1, size(bulk)
+            if (.not. shr_infnan_isnan(bulk(i)) .and. .not. shr_infnan_isnan(tracers(n,i))) then
+               ! neither value is nan: check error tolerance
+               val_bulk = bulk(i) * tracer_initial_ratios(n)
+               val_tracer = tracers(n,i)
+               if (val_bulk == 0.0_r8 .and. val_tracer == 0.0_r8) then
+                  ! trap special case where both are zero to avoid division by zero: values equal (do nothing)
+               else if (abs(val_bulk - val_tracer) / max(abs(val_bulk), abs(val_tracer)) > tolerance) then
+                  arrays_equal = .false.
+                  diff_tracer = n
+                  diff_loc = i
+                  exit tracer_loop
+               else
+                  ! error < tolerance: values considered equal (do nothing)
+               end if
+            else if (shr_infnan_isnan(bulk(i)) .and. shr_infnan_isnan(tracers(n,i))) then
+               ! both values are nan: values are considered equal (do nothing)
+            else
+               ! only one value is nan: not equal
+               arrays_equal = .false.
+               diff_tracer = n
+               diff_loc = i
+               exit tracer_loop
+            end if
+         end do
+      end do tracer_loop
+
+      if (.not. arrays_equal) then
+         write(s_logunit, '(A,A)') subname, " ERROR: tracer does not agree with bulk water"
+         write(s_logunit, '(A,A)') "Variable: ", trim(name)
+         write(s_logunit, '(A,I0,A,A)') "First difference found for tracer #", diff_tracer, &
+              ": ", tracer_names(diff_tracer)
+         write(s_logunit, '(A,I0)') "First difference at index: ", diff_loc
+         write(s_logunit, '(A, E25.17)') "Bulk  : ", bulk(diff_loc)
+         write(s_logunit, '(A, E25.17)') "Tracer: ", tracers(diff_tracer, diff_loc)
+         write(s_logunit, '(A, E25.17)') "Expected ratio: ", tracer_initial_ratios(diff_tracer)
+         if (.not. shr_infnan_isnan(bulk(diff_loc))) then
+            write(s_logunit, '(A, E25.17)') "Bulk*ratio: ", bulk(diff_loc) * tracer_initial_ratios(diff_tracer)
+         end if
+         call shr_sys_abort(subname//" ERROR: tracer does not agree with bulk water")
+      end if
+
+   end subroutine shr_wtracers_check_tracer_ratios
 
    !-----------------------------------------------------------------------
    subroutine shr_wtracers_finalize(rc)
