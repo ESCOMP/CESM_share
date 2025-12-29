@@ -86,6 +86,9 @@ module shr_wtracers_mod
    real(r8), allocatable :: tracer_initial_ratios(:)
    logical :: water_tracers_initialized = .false.
 
+   ! true if this is the main task (for i/o)
+   logical :: is_maintask
+
    character(len=*), parameter :: u_FILE_u = &
         __FILE__
 
@@ -115,12 +118,14 @@ contains
          return
       end if
 
+      is_maintask = maintask
+
       call shr_wtracers_parse_attributes(driver, rc=rc)
       if (chkerr(rc,__LINE__,u_FILE_u)) return
 
       water_tracers_initialized = .true.
 
-      call shr_wtracers_print(maintask, rc=rc)
+      call shr_wtracers_print(rc=rc)
       if (chkerr(rc,__LINE__,u_FILE_u)) return
 
    end subroutine shr_wtracers_init
@@ -297,13 +302,12 @@ contains
    end subroutine shr_wtracers_set_initial_ratios
 
    !-----------------------------------------------------------------------
-   subroutine shr_wtracers_print(maintask, rc)
+   subroutine shr_wtracers_print(rc)
       !
       ! !DESCRIPTION:
       ! Print tracer info to log
       !
       ! !ARGUMENTS
-      logical, intent(in)  :: maintask  ! true if this is the main task
       integer, intent(out) :: rc
       !
       ! !LOCAL VARIABLES
@@ -315,7 +319,7 @@ contains
 
       ! The use of the various getters in the following code is partly for the sake of
       ! testing these getters to ensure they work right (via inspection of the output).
-      if (maintask) then
+      if (is_maintask) then
          if (shr_wtracers_present()) then
             write(s_logunit, '(A)') "Water Tracers:"
          else
