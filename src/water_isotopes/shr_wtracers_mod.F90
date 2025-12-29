@@ -18,7 +18,7 @@ module shr_wtracers_mod
    use shr_kind_mod      , only : r8=>SHR_KIND_R8
    use shr_kind_mod      , only : CS=>SHR_KIND_CS, CM=>SHR_KIND_CM, CXX=>SHR_KIND_CXX
    use shr_log_mod       , only : shr_log_error
-   use shr_log_mod       , only : s_logunit=>shr_log_Unit, s_loglev=>shr_log_Level
+   use shr_log_mod       , only : s_logunit=>shr_log_Unit
    use shr_string_mod    , only : shr_string_listGetAllNames, shr_string_toUpper
    use shr_infnan_mod    , only : shr_infnan_isnan
    use shr_sys_mod       , only : shr_sys_abort
@@ -69,12 +69,12 @@ module shr_wtracers_mod
    character(len=*), parameter, public :: WATER_SPECIES_NAME_BULK = "-"
 
    ! Possible species types
-   integer, parameter, public :: WATER_SPECIES_UNDEFINED = -1
-   integer, parameter, public :: WATER_SPECIES_BULK = 0  ! This one is special: total/bulk water rather than a species
-   integer, parameter, public :: WATER_SPECIES_H218O = 1
-   integer, parameter, public :: WATER_SPECIES_H217O = 2
-   integer, parameter, public :: WATER_SPECIES_HDO = 3
-   integer, parameter, public :: WATER_SPECIES_MAXVAL = 3
+   integer, parameter, public :: WATER_SPECIES_TYPE_UNDEFINED = -1
+   integer, parameter, public :: WATER_SPECIES_TYPE_BULK = 0  ! This one is special: total/bulk water rather than a species
+   integer, parameter, public :: WATER_SPECIES_TYPE_H218O = 1
+   integer, parameter, public :: WATER_SPECIES_TYPE_H217O = 2
+   integer, parameter, public :: WATER_SPECIES_TYPE_HDO = 3
+   integer, parameter, public :: WATER_SPECIES_TYPE_MAXVAL = 3
 
    ! Suffix for water tracer field names
    character(len=*), parameter, public :: WTRACERS_SUFFIX = "_wtracers"
@@ -89,6 +89,9 @@ module shr_wtracers_mod
    character(len=WTRACER_SPECIES_NAME_MAXLEN), allocatable :: tracer_species_names(:)
    real(r8), allocatable :: tracer_initial_ratios(:)
    logical :: water_tracers_initialized = .false.
+
+   ! true if this is the main task (for i/o)
+   logical :: is_maintask
 
    character(len=*), parameter :: u_FILE_u = &
         __FILE__
@@ -119,12 +122,14 @@ contains
          return
       end if
 
+      is_maintask = maintask
+
       call shr_wtracers_parse_attributes(driver, rc=rc)
       if (chkerr(rc,__LINE__,u_FILE_u)) return
 
       water_tracers_initialized = .true.
 
-      call shr_wtracers_print(maintask, rc=rc)
+      call shr_wtracers_print(rc=rc)
       if (chkerr(rc,__LINE__,u_FILE_u)) return
 
    end subroutine shr_wtracers_init
@@ -194,6 +199,13 @@ contains
       !
       ! !DESCRIPTION:
       ! Parse water tracer NUOPC attributes
+      !
+      ! This parses three attributes, which are all colon-delimited strings, and which all
+      ! must have the same number of elements (this requirement is checked here):
+      ! - water_tracer_names (arbitrary user-defined names)
+      ! - water_tracer_species (corresponding to predetermined strings like "H218O", or
+      !   the string given by WATER_SPECIES_NAME_BULK)
+      ! - water_tracer_initial_ratios (strings that are convertable to real numbers)
       !
       ! !ARGUMENTS
       type(ESMF_GridComp), intent(in) :: driver
@@ -304,13 +316,13 @@ contains
       do i = 1, num_tracers
          select case (tracer_species_names(i))
          case (WATER_SPECIES_NAME_BULK)
-            tracer_species_types(i) = WATER_SPECIES_BULK
+            tracer_species_types(i) = WATER_SPECIES_TYPE_BULK
          case ("H218O")
-            tracer_species_types(i) = WATER_SPECIES_H218O
+            tracer_species_types(i) = WATER_SPECIES_TYPE_H218O
          case ("H217O")
-            tracer_species_types(i) = WATER_SPECIES_H217O
+            tracer_species_types(i) = WATER_SPECIES_TYPE_H217O
          case ("HDO")
-            tracer_species_types(i) = WATER_SPECIES_HDO
+            tracer_species_types(i) = WATER_SPECIES_TYPE_HDO
          case default
             call shr_log_error( &
                  subname//": unrecognized water species name '"//trim(tracer_species_names(i))//"'", &
@@ -354,13 +366,12 @@ contains
    end subroutine shr_wtracers_set_initial_ratios
 
    !-----------------------------------------------------------------------
-   subroutine shr_wtracers_print(maintask, rc)
+   subroutine shr_wtracers_print(rc)
       !
       ! !DESCRIPTION:
       ! Print tracer info to log
       !
       ! !ARGUMENTS
-      logical, intent(in)  :: maintask  ! true if this is the main task
       integer, intent(out) :: rc
       !
       ! !LOCAL VARIABLES
@@ -372,7 +383,7 @@ contains
 
       ! The use of the various getters in the following code is partly for the sake of
       ! testing these getters to ensure they work right (via inspection of the output).
-      if (s_loglev > 0 .and. maintask) then
+      if (is_maintask) then
          if (shr_wtracers_present()) then
             write(s_logunit, '(A)') "Water Tracers:"
          else
@@ -530,7 +541,7 @@ contains
       end if
       call shr_wtracers_check_tracer_num(tracer_num, subname)
 
-      shr_wtracers_is_isotope = (tracer_species_types(tracer_num) /= WATER_SPECIES_BULK)
+      shr_wtracers_is_isotope = (tracer_species_types(tracer_num) /= WATER_SPECIES_TYPE_BULK)
    end function shr_wtracers_is_isotope
 
    !-----------------------------------------------------------------------
