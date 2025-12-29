@@ -26,7 +26,8 @@ list(APPEND share_sources
   shr_mpi_mod.F90
   shr_pio_mod.F90
   shr_wv_sat_mod.F90
-  m_MergeSorts.F90)
+  m_MergeSorts.F90
+  nuopc_shr_methods.F90)
 
 sourcelist_to_parent(share_sources)
 

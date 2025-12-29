@@ -94,6 +94,7 @@ endif()
 
 # Among other things, this handles the genf90 generation
 add_subdirectory(src)
+add_subdirectory(src/water_isotopes)
 
 file(GLOB FSOURCES "src/*.F90" "src/water_isotopes/*.F90" "RandNum/src/*.F90" "RandNum/src/*/*.F90")
 file(GLOB CSOURCES "src/*.c" "RandNum/src/*/*.c")
@@ -110,6 +111,7 @@ target_include_directories(csm_share PRIVATE ${CMAKE_BINARY_DIR})
 if(UNITTESTS)
    # need to turn the warning check off for pfunit
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -Wno-error ${CMAKE_Fortran_COMPILER_DIRECTIVE} -I${CMAKE_BINARY_DIR}/unittests/shr_assert_test/mod/assert/ ")
-   add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs)
+   add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/util csm_share_stubs_util)
+   add_subdirectory(${CMAKE_SOURCE_DIR}/unit_test_stubs/gptl csm_share_stubs_gptl)
    add_subdirectory(${CMAKE_SOURCE_DIR}/test/unit ${CMAKE_BINARY_DIR}/unittests)
 endif()

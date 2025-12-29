@@ -1,0 +1,3 @@
+This directory contains stubs of the gptl timing library. In real builds, we typically
+link against a pre-built gptl. Here, for simplicity, we facilitate including the necessary
+stubs in the share library so we can avoid linking against an actual gptl.

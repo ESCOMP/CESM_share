@@ -35,7 +35,9 @@ module shr_wtracers_mod
    !--------------------------------------------------------------------------
 
    public :: shr_wtracers_init              ! initialize water tracer information
+   public :: shr_wtracers_init_directly_for_testing ! initialize water tracer information directly for the sake of unit testing
    public :: shr_wtracers_finalize          ! finalize water tracer information
+   public :: shr_wtracers_initialized       ! return true if this module has been initialized
    public :: shr_wtracers_present           ! return true if there are water tracers in this simulation
    public :: shr_wtracers_get_num_tracers   ! get number of water tracers in this simulation
    public :: shr_wtracers_get_name          ! get the name of a given tracer
@@ -126,6 +128,66 @@ contains
       if (chkerr(rc,__LINE__,u_FILE_u)) return
 
    end subroutine shr_wtracers_init
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_init_directly_for_testing( &
+              water_tracer_names, water_tracer_species, water_tracer_initial_ratios, rc)
+      !
+      ! !DESCRIPTION:
+      ! Initialize water tracer information directly for the sake of unit testing
+      !
+      ! If there are any errors, an ESMF error code is returned in rc
+      !
+      ! !ARGUMENTS
+      character(len=*), intent(in) :: water_tracer_names(:)
+      character(len=*), intent(in) :: water_tracer_species(:)  ! expected to be uppercase
+      real(r8), intent(in) :: water_tracer_initial_ratios(:)
+      integer, intent(out) :: rc
+      !
+      ! !LOCAL VARIABLES
+      character(len=*), parameter :: subname='shr_wtracers_init_directly_for_testing'
+      !---------------------------------------------------------------
+
+      rc = ESMF_SUCCESS
+
+      if (water_tracers_initialized) then
+         call shr_log_error("Attempt to call "//subname//" multiple times", rc=rc)
+         return
+      end if
+
+      num_tracers = size(water_tracer_names)
+      if (size(water_tracer_species) /= num_tracers .or. &
+          size(water_tracer_initial_ratios) /= num_tracers) then
+         call shr_log_error(subname//": Input array sizes disagree", rc=rc)
+         return
+      end if
+
+      tracer_names = water_tracer_names
+      tracer_species_names = water_tracer_species
+      call shr_wtracers_set_species_types(rc=rc)
+      if (chkerr(rc,__LINE__,u_FILE_u)) return
+      tracer_initial_ratios = water_tracer_initial_ratios
+
+      water_tracers_initialized = .true.
+
+   end subroutine shr_wtracers_init_directly_for_testing
+
+   !-----------------------------------------------------------------------
+   function shr_wtracers_initialized()
+      !
+      ! !DESCRIPTION:
+      ! Return true if this module has been initialized
+      !
+      ! !ARGUMENTS
+      logical :: shr_wtracers_initialized  ! function result
+      !
+      ! !LOCAL VARIABLES:
+      character(len=*), parameter :: subname='shr_wtracers_initialized'
+      !-----------------------------------------------------------------------
+
+      shr_wtracers_initialized = water_tracers_initialized
+
+   end function shr_wtracers_initialized
 
    !-----------------------------------------------------------------------
    subroutine shr_wtracers_parse_attributes(driver, rc)
@@ -569,11 +631,11 @@ contains
          write(s_logunit, '(A,I0,A,A)') "First difference found for tracer #", diff_tracer, &
               ": ", tracer_names(diff_tracer)
          write(s_logunit, '(A,I0)') "First difference at index: ", diff_loc
-         write(s_logunit, '(A, E25.17)') "Bulk  : ", bulk(diff_loc)
-         write(s_logunit, '(A, E25.17)') "Tracer: ", tracers(diff_tracer, diff_loc)
-         write(s_logunit, '(A, E25.17)') "Expected ratio: ", tracer_initial_ratios(diff_tracer)
+         write(s_logunit, '(A, ES25.17)') "Bulk  : ", bulk(diff_loc)
+         write(s_logunit, '(A, ES25.17)') "Tracer: ", tracers(diff_tracer, diff_loc)
+         write(s_logunit, '(A, ES25.17)') "Expected ratio: ", tracer_initial_ratios(diff_tracer)
          if (.not. shr_infnan_isnan(bulk(diff_loc))) then
-            write(s_logunit, '(A, E25.17)') "Bulk*ratio: ", bulk(diff_loc) * tracer_initial_ratios(diff_tracer)
+            write(s_logunit, '(A, ES25.17)') "Bulk*ratio: ", bulk(diff_loc) * tracer_initial_ratios(diff_tracer)
          end if
          call shr_sys_abort(subname//" ERROR: tracer does not agree with bulk water")
       end if
