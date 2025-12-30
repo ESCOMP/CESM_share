@@ -155,8 +155,6 @@ contains
          return
       end if
 
-      is_maintask = .true.
-
       num_tracers = size(water_tracer_names)
       if (size(water_tracer_species) /= num_tracers .or. &
           size(water_tracer_initial_ratios) /= num_tracers) then
