@@ -20,6 +20,7 @@ module shr_wtracers_mod
    use shr_log_mod       , only : shr_log_error
    use shr_log_mod       , only : s_logunit=>shr_log_Unit
    use shr_string_mod    , only : shr_string_listGetAllNames, shr_string_toUpper
+   use shr_string_mod    , only : shr_string_withoutSuffix
    use shr_infnan_mod    , only : shr_infnan_isnan
    use shr_sys_mod       , only : shr_sys_abort
    use nuopc_shr_methods , only : chkerr
@@ -38,6 +39,7 @@ module shr_wtracers_mod
    public :: shr_wtracers_init_directly_for_testing ! initialize water tracer information directly for the sake of unit testing
    public :: shr_wtracers_finalize          ! finalize water tracer information
    public :: shr_wtracers_initialized       ! return true if this module has been initialized
+   public :: shr_wtracers_is_wtracer_field  ! return true if the given field name is a water tracer field
    public :: shr_wtracers_present           ! return true if there are water tracers in this simulation
    public :: shr_wtracers_get_num_tracers   ! get number of water tracers in this simulation
    public :: shr_wtracers_get_name          ! get the name of a given tracer
@@ -417,6 +419,38 @@ contains
          call shr_sys_abort(subname//" ERROR: tracer_num out of range")
       end if
    end subroutine shr_wtracers_check_tracer_num
+
+   !-----------------------------------------------------------------------
+   function shr_wtracers_is_wtracer_field(fieldname)
+      !
+      ! !DESCRIPTION:
+      ! Return true if the given field name is a water tracer field
+      !
+      ! Note that, unlike most other routines in this module, this function works even if
+      ! the data in this module has not been initialized (i.e., even if shr_wtracers_init
+      ! has not been called): it works simply based on naming conventions.
+      !
+      ! !ARGUMENTS
+      character(len=*), intent(in) :: fieldname
+      logical :: shr_wtracers_is_wtracer_field  ! function result
+      !
+      ! !LOCAL VARIABLES:
+      integer :: localrc
+      logical :: is_tracer
+
+      character(len=*), parameter :: subname='shr_wtracers_is_wtracer_field'
+      !-----------------------------------------------------------------------
+
+      call shr_string_withoutSuffix( &
+           in_str = fieldname, &
+           suffix = WTRACERS_SUFFIX, &
+           has_suffix = is_tracer, &
+           rc = localrc)
+      if (localrc /= 0) then
+         call shr_sys_abort(subname//": ERROR in shr_string_withoutSuffix")
+      end if
+      shr_wtracers_is_wtracer_field = is_tracer
+   end function shr_wtracers_is_wtracer_field
 
    !-----------------------------------------------------------------------
    function shr_wtracers_present()
