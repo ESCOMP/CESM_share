@@ -1478,7 +1478,9 @@ module shr_reprosum_mod
 #endif
 #endif
 
+#ifdef TIMING
       call t_startf('repro_sum_finalsum')
+#endif
 ! Construct global sum from integer vector representation:
 !  1) arr_max_shift is the shift applied to fraction(arr_gmax) .
 !   When shifting back, need to 'add back in' the true arr_gmax exponent.
@@ -1852,7 +1854,9 @@ module shr_reprosum_mod
          endif
 
       enddo
+#ifdef TIMING
       call t_stopf('repro_sum_finalsum')
+#endif
 
    end subroutine shr_reprosum_int
 
