@@ -598,7 +598,8 @@ contains
    !-----------------------------------------------------------------------
    subroutine shr_wtracers_check_tracer_ratios(tracers, bulk, name)
       !
-      ! !DESCRIPTION: Check tracer ratios (tracer/bulk) against expectations
+      ! !DESCRIPTION:
+      ! Check tracer ratios (tracer/bulk) against expectations
       !
       ! Aborts if any inconsistencies are found
       !
