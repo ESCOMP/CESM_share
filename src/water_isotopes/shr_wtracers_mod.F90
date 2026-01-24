@@ -40,6 +40,7 @@ module shr_wtracers_mod
    public :: shr_wtracers_finalize          ! finalize water tracer information
    public :: shr_wtracers_initialized       ! return true if this module has been initialized
    public :: shr_wtracers_is_wtracer_field  ! return true if the given field name is a water tracer field
+   public :: shr_wtracers_get_bulk_fieldname ! return the name of the equivalent bulk field corresponding to a water tracer field
    public :: shr_wtracers_present           ! return true if there are water tracers in this simulation
    public :: shr_wtracers_get_num_tracers   ! get number of water tracers in this simulation
    public :: shr_wtracers_get_name          ! get the name of a given tracer
@@ -451,6 +452,45 @@ contains
       end if
       shr_wtracers_is_wtracer_field = is_tracer
    end function shr_wtracers_is_wtracer_field
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_get_bulk_fieldname(fieldname, is_wtracer_field, bulk_fieldname)
+      !
+      ! !DESCRIPTION:
+      ! Return the name of the equivalent bulk field corresponding to a water tracer field
+      !
+      ! If fieldname is the name of a water tracer field, based on naming conventions,
+      ! then is_wtracer_field will be true and bulk_fieldname will hold the name of the
+      ! corresponding bulk field.
+      !
+      ! If fieldname is *not* the name of a water tracer field, then is_wtracer_field will
+      ! be false, and bulk_fieldname will be the same as fieldname.
+      !
+      ! Note that, unlike most other routines in this module, this function works even if
+      ! the data in this module has not been initialized (i.e., even if shr_wtracers_init
+      ! has not been called): it works simply based on naming conventions.
+      !
+      ! !ARGUMENTS
+      character(len=*), intent(in)  :: fieldname
+      logical         , intent(out) :: is_wtracer_field
+      character(len=*), intent(out) :: bulk_fieldname
+      !
+      ! !LOCAL VARIABLES:
+      integer :: localrc
+
+      character(len=*), parameter :: subname='shr_wtracers_get_bulk_fieldname'
+      !-----------------------------------------------------------------------
+
+      call shr_string_withoutSuffix( &
+           in_str = fieldname, &
+           suffix = WTRACERS_SUFFIX, &
+           has_suffix = is_wtracer_field, &
+           out_str = bulk_fieldname, &
+           rc = localrc)
+      if (localrc /= 0) then
+         call shr_sys_abort(subname//": ERROR in shr_string_withoutSuffix")
+      end if
+   end subroutine shr_wtracers_get_bulk_fieldname
 
    !-----------------------------------------------------------------------
    function shr_wtracers_present()
