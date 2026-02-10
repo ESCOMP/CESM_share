@@ -50,6 +50,11 @@ module shr_wtracers_mod
    public :: shr_wtracers_get_initial_ratio ! get the initial ratio for a given tracer
    public :: shr_wtracers_check_tracer_ratios ! check tracer ratios against expectations
 
+   interface shr_wtracers_check_tracer_ratios
+      module procedure shr_wtracers_check_tracer_ratios_1d
+      module procedure shr_wtracers_check_tracer_ratios_2d
+   end interface shr_wtracers_check_tracer_ratios
+
    !--------------------------------------------------------------------------
    ! Private interfaces
    !--------------------------------------------------------------------------
@@ -636,7 +641,7 @@ contains
    end function shr_wtracers_get_initial_ratio
 
    !-----------------------------------------------------------------------
-   subroutine shr_wtracers_check_tracer_ratios(tracers, bulk, name)
+   subroutine shr_wtracers_check_tracer_ratios_1d(tracers, bulk, name, extra_dim_index)
       !
       ! !DESCRIPTION:
       ! Check tracer ratios (tracer/bulk) against expectations
@@ -651,6 +656,7 @@ contains
       real(r8), intent(in) :: tracers(:,:)  ! dimensioned [tracerNum, gridcell]
       real(r8), intent(in) :: bulk(:)
       character(len=*), intent(in) :: name  ! for diagnostic output
+      integer, intent(in), optional :: extra_dim_index  ! index of extra dimension (for error messages)
       !
       ! !LOCAL VARIABLES
       integer :: n, i
@@ -660,7 +666,9 @@ contains
 
       real(r8), parameter :: tolerance = 1.0e-7_r8
 
-      character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios'
+      character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios_1d'
+      ! In some error messages, it makes more sense to print the generic name:
+      character(len=*), parameter :: subname_generic='shr_wtracers_check_tracer_ratios'
       !-----------------------------------------------------------------------
       if (.not. water_tracers_initialized) then
          call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
@@ -708,8 +716,11 @@ contains
       end do tracer_loop
 
       if (.not. arrays_equal) then
-         write(s_logunit, '(A,A)') subname, " ERROR: tracer does not agree with bulk water"
+         write(s_logunit, '(A,A)') subname_generic, " ERROR: tracer does not agree with bulk water"
          write(s_logunit, '(A,A)') "Variable: ", trim(name)
+         if (present(extra_dim_index)) then
+            write(s_logunit, '(A,I0)') "Extra dimension index: ", extra_dim_index
+         end if
          write(s_logunit, '(A,I0,A,A)') "First difference found for tracer #", diff_tracer, &
               ": ", tracer_names(diff_tracer)
          write(s_logunit, '(A,I0)') "First difference at index: ", diff_loc
@@ -719,10 +730,55 @@ contains
          if (.not. shr_infnan_isnan(bulk(diff_loc))) then
             write(s_logunit, '(A, ES25.17)') "Bulk*ratio: ", bulk(diff_loc) * tracer_initial_ratios(diff_tracer)
          end if
-         call shr_sys_abort(subname//" ERROR: tracer does not agree with bulk water")
+         call shr_sys_abort(subname_generic//" ERROR: tracer does not agree with bulk water")
       end if
 
-   end subroutine shr_wtracers_check_tracer_ratios
+   end subroutine shr_wtracers_check_tracer_ratios_1d
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_check_tracer_ratios_2d(tracers, bulk, name)
+      !
+      ! !DESCRIPTION:
+      ! Check tracer ratios (tracer/bulk) against expectations for 2-d bulk arrays
+      !
+      ! This is a lightweight wrapper around shr_wtracers_check_tracer_ratios_1d that
+      ! loops over the first dimension of the bulk array.
+      !
+      ! Aborts if any inconsistencies are found
+      !
+      ! Should only be called in simulations set up to maintain constant water tracer
+      ! ratios: in general, water tracers will deviate from their initial, fixed ratios,
+      ! and so it makes no sense to perform these checks since they will always fail.
+      !
+      ! !ARGUMENTS
+      real(r8), intent(in) :: tracers(:,:,:)  ! dimensioned [tracerNum, ungriddedDim, gridcell]
+      real(r8), intent(in) :: bulk(:,:)       ! dimensioned [ungriddedDim, gridcell]
+      character(len=*), intent(in) :: name    ! for diagnostic output
+      !
+      ! !LOCAL VARIABLES
+      integer :: i
+
+      character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios_2d'
+      !-----------------------------------------------------------------------
+      if (.not. water_tracers_initialized) then
+         call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
+      end if
+      if (size(tracers, 1) /= num_tracers) then
+         call shr_sys_abort(subname//" ERROR: unexpected number of tracers")
+      end if
+      if (size(tracers, 2) /= size(bulk, 1)) then
+         call shr_sys_abort(subname//" ERROR: inconsistent size for tracers dim 2 and bulk dim 1")
+      end if
+      if (size(tracers, 3) /= size(bulk, 2)) then
+         call shr_sys_abort(subname//" ERROR: inconsistent size for tracers dim 3 and bulk dim 2")
+      end if
+
+      do i = 1, size(bulk, 1)
+         call shr_wtracers_check_tracer_ratios_1d(tracers(:,i,:), bulk(i,:), name, &
+              extra_dim_index=i)
+      end do
+
+   end subroutine shr_wtracers_check_tracer_ratios_2d
 
    !-----------------------------------------------------------------------
    subroutine shr_wtracers_finalize(rc)
