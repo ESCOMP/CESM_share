@@ -751,7 +751,7 @@ contains
       ! and so it makes no sense to perform these checks since they will always fail.
       !
       ! !ARGUMENTS
-      real(r8), intent(in) :: tracers(:,:,:)  ! dimensioned [tracerNum, ungriddedDim, gridcell]
+      real(r8), intent(in) :: tracers(:,:,:)  ! dimensioned [ungriddedDim, tracerNum, gridcell]
       real(r8), intent(in) :: bulk(:,:)       ! dimensioned [ungriddedDim, gridcell]
       character(len=*), intent(in) :: name    ! for diagnostic output
       !
@@ -763,18 +763,18 @@ contains
       if (.not. water_tracers_initialized) then
          call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
       end if
-      if (size(tracers, 1) /= num_tracers) then
-         call shr_sys_abort(subname//" ERROR: unexpected number of tracers")
+      if (size(tracers, 1) /= size(bulk, 1)) then
+         call shr_sys_abort(subname//" ERROR: inconsistent size for tracers dim 1 and bulk dim 1")
       end if
-      if (size(tracers, 2) /= size(bulk, 1)) then
-         call shr_sys_abort(subname//" ERROR: inconsistent size for tracers dim 2 and bulk dim 1")
+      if (size(tracers, 2) /= num_tracers) then
+         call shr_sys_abort(subname//" ERROR: unexpected number of tracers")
       end if
       if (size(tracers, 3) /= size(bulk, 2)) then
          call shr_sys_abort(subname//" ERROR: inconsistent size for tracers dim 3 and bulk dim 2")
       end if
 
       do i = 1, size(bulk, 1)
-         call shr_wtracers_check_tracer_ratios_1d(tracers(:,i,:), bulk(i,:), name, &
+         call shr_wtracers_check_tracer_ratios_1d(tracers(i,:,:), bulk(i,:), name, &
               extra_dim_index=i)
       end do
 
