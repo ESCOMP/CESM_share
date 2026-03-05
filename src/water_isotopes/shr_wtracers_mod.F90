@@ -693,15 +693,11 @@ contains
                ! neither value is nan: check error tolerance
                val_bulk = bulk(i) * tracer_initial_ratios(n)
                val_tracer = tracers(n,i)
-               if (val_bulk == 0.0_r8 .and. val_tracer == 0.0_r8) then
-                  ! trap special case where both are zero to avoid division by zero: values equal (do nothing)
-               else if (abs(val_bulk - val_tracer) / max(abs(val_bulk), abs(val_tracer)) > tolerance) then
+               if (abs(val_bulk - val_tracer) > tolerance * max(abs(val_bulk), abs(val_tracer))) then
                   arrays_equal = .false.
                   diff_tracer = n
                   diff_loc = i
                   exit tracer_loop
-               else
-                  ! error < tolerance: values considered equal (do nothing)
                end if
             else if (shr_infnan_isnan(bulk(i)) .and. shr_infnan_isnan(tracers(n,i))) then
                ! both values are nan: values are considered equal (do nothing)
