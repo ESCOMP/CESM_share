@@ -19,6 +19,7 @@ module shr_wtracers_mod
    use shr_kind_mod      , only : CS=>SHR_KIND_CS, CM=>SHR_KIND_CM, CXX=>SHR_KIND_CXX
    use shr_log_mod       , only : shr_log_error
    use shr_log_mod       , only : s_logunit=>shr_log_Unit
+   use shr_log_mod       , only : s_loglev=>shr_log_Level
    use shr_string_mod    , only : shr_string_listGetAllNames, shr_string_toUpper
    use shr_string_mod    , only : shr_string_withoutSuffix
    use shr_infnan_mod    , only : shr_infnan_isnan
@@ -132,8 +133,10 @@ contains
 
       water_tracers_initialized = .true.
 
-      call shr_wtracers_print(maintask, rc=rc)
-      if (chkerr(rc,__LINE__,u_FILE_u)) return
+      if (s_loglev > 0) then
+         call shr_wtracers_print(maintask, rc=rc)
+         if (chkerr(rc,__LINE__,u_FILE_u)) return
+      end if
 
    end subroutine shr_wtracers_init
 
