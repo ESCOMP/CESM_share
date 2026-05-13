@@ -417,15 +417,21 @@ contains
       ! !ARGUMENTS
       integer, intent(in) :: tracer_num
       character(len=*), intent(in) :: subname  ! name of the caller, for error message
+      !
+      ! !LOCAL VARIABLES
+      character(len=CXX) :: msg
       !-----------------------------------------------------------------------
       if (tracer_num < 1 .or. tracer_num > num_tracers) then
-         write(s_logunit, '(A,I0)') subname//" ERROR: tracer_num out of range: ", tracer_num
          if (num_tracers == 0) then
-            write(s_logunit, '(A)') "(This simulation has no tracers.)"
+            write(msg, '(A,I0,A)') &
+                 subname//" ERROR: tracer_num out of range: ", tracer_num, &
+                 " (This simulation has no tracers.)"
          else
-            write(s_logunit, '(A,I0,A)') "(Valid range: 1 - ", num_tracers, ".)"
+            write(msg, '(A,I0,A,I0,A)') &
+                 subname//" ERROR: tracer_num out of range: ", tracer_num, &
+                 " (Valid range: 1 - ", num_tracers, ")"
          end if
-         call shr_sys_abort(subname//" ERROR: tracer_num out of range")
+         call shr_sys_abort(trim(msg))
       end if
    end subroutine shr_wtracers_check_tracer_num
 
@@ -446,6 +452,7 @@ contains
       ! !LOCAL VARIABLES:
       integer :: localrc
       logical :: is_tracer
+      character(len=CXX) :: msg
 
       character(len=*), parameter :: subname='shr_wtracers_is_wtracer_field'
       !-----------------------------------------------------------------------
@@ -456,7 +463,10 @@ contains
            has_suffix = is_tracer, &
            rc = localrc)
       if (localrc /= 0) then
-         call shr_sys_abort(subname//": ERROR in shr_string_withoutSuffix")
+         write(msg, '(A,I0)') &
+              subname//": ERROR in shr_string_withoutSuffix for fieldname '"// &
+              trim(fieldname)//"', localrc = ", localrc
+         call shr_sys_abort(trim(msg))
       end if
       shr_wtracers_is_wtracer_field = is_tracer
    end function shr_wtracers_is_wtracer_field
@@ -485,6 +495,7 @@ contains
       !
       ! !LOCAL VARIABLES:
       integer :: localrc
+      character(len=CXX) :: msg
 
       character(len=*), parameter :: subname='shr_wtracers_get_bulk_fieldname'
       !-----------------------------------------------------------------------
@@ -496,7 +507,10 @@ contains
            out_str = bulk_fieldname, &
            rc = localrc)
       if (localrc /= 0) then
-         call shr_sys_abort(subname//": ERROR in shr_string_withoutSuffix")
+         write(msg, '(A,I0)') &
+              subname//": ERROR in shr_string_withoutSuffix for fieldname '"// &
+              trim(fieldname)//"', localrc = ", localrc
+         call shr_sys_abort(trim(msg))
       end if
    end subroutine shr_wtracers_get_bulk_fieldname
 
@@ -666,6 +680,7 @@ contains
       logical :: arrays_equal
       integer :: diff_tracer, diff_loc
       real(r8) :: val_bulk, val_tracer
+      character(len=CXX) :: msg
 
       real(r8), parameter :: tolerance = 1.0e-7_r8
 
@@ -677,10 +692,16 @@ contains
          call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
       end if
       if (size(tracers, 1) /= num_tracers) then
-         call shr_sys_abort(subname//" ERROR: unexpected number of tracers")
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: unexpected number of tracers: size(tracers, 1) = ", &
+              size(tracers, 1), ", num_tracers = ", num_tracers
+         call shr_sys_abort(trim(msg))
       end if
       if (size(tracers, 2) /= size(bulk)) then
-         call shr_sys_abort(subname//" ERROR: inconsistent sizes for tracers and bulk")
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: inconsistent sizes for tracers and bulk: size(tracers, 2) = ", &
+              size(tracers, 2), ", size(bulk) = ", size(bulk)
+         call shr_sys_abort(trim(msg))
       end if
 
       arrays_equal = .true.
@@ -729,7 +750,10 @@ contains
          if (.not. shr_infnan_isnan(bulk(diff_loc))) then
             write(s_logunit, '(A, ES25.17)') "Bulk*ratio: ", bulk(diff_loc) * tracer_initial_ratios(diff_tracer)
          end if
-         call shr_sys_abort(subname_generic//" ERROR: tracer does not agree with bulk water")
+         write(msg, '(A,I0)') &
+              subname_generic//" ERROR: tracer does not agree with bulk water for variable '"// &
+              trim(name)//"', tracer '"//trim(tracer_names(diff_tracer))//"', at index ", diff_loc
+         call shr_sys_abort(trim(msg))
       end if
 
    end subroutine shr_wtracers_check_tracer_ratios_1d
@@ -756,6 +780,7 @@ contains
       !
       ! !LOCAL VARIABLES
       integer :: i
+      character(len=CXX) :: msg
 
       character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios_2d'
       !-----------------------------------------------------------------------
@@ -763,13 +788,22 @@ contains
          call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
       end if
       if (size(tracers, 1) /= size(bulk, 1)) then
-         call shr_sys_abort(subname//" ERROR: inconsistent size for tracers dim 1 and bulk dim 1")
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: inconsistent size for tracers dim 1 and bulk dim 1: size(tracers, 1) = ", &
+              size(tracers, 1), ", size(bulk, 1) = ", size(bulk, 1)
+         call shr_sys_abort(trim(msg))
       end if
       if (size(tracers, 2) /= num_tracers) then
-         call shr_sys_abort(subname//" ERROR: unexpected number of tracers")
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: unexpected number of tracers: size(tracers, 2) = ", &
+              size(tracers, 2), ", num_tracers = ", num_tracers
+         call shr_sys_abort(trim(msg))
       end if
       if (size(tracers, 3) /= size(bulk, 2)) then
-         call shr_sys_abort(subname//" ERROR: inconsistent size for tracers dim 3 and bulk dim 2")
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: inconsistent size for tracers dim 3 and bulk dim 2: size(tracers, 3) = ", &
+              size(tracers, 3), ", size(bulk, 2) = ", size(bulk, 2)
+         call shr_sys_abort(trim(msg))
       end if
 
       do i = 1, size(bulk, 1)

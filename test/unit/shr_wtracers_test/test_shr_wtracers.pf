@@ -109,7 +109,7 @@ contains
       tracers(2,3) = tracers(2,3) * 1.1_r8
 
       call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
-      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
    end subroutine test_shr_wtracers_check_tracer_ratios_differ
 
    @Test
@@ -136,7 +136,7 @@ contains
       tracers(2,3) = 0._r8
 
       call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
-      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
    end subroutine test_shr_wtracers_check_tracer_ratios_tracer0
 
    @Test
@@ -163,7 +163,7 @@ contains
       bulk(3) = 0._r8
 
       call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
-      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer1', at index 3")
    end subroutine test_shr_wtracers_check_tracer_ratios_bulk0
 
    @Test
@@ -218,7 +218,7 @@ contains
       tracers(2,3) = nan
 
       call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
-      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
    end subroutine test_shr_wtracers_check_tracer_ratios_tracernan
 
    ! ------------------------------------------------------------------------
@@ -281,7 +281,7 @@ contains
       tracers(2,2,3) = tracers(2,2,3) * 1.1_r8
 
       call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
-      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
    end subroutine test_shr_wtracers_check_tracer_ratios_2d_differ
 
 end module test_shr_wtracers
