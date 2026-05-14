@@ -1,0 +1,292 @@
+module test_shr_wtracers
+
+   ! Tests of shr_wtracers_mod
+
+   use funit
+
+   use shr_wtracers_mod, only : shr_wtracers_initialized, shr_wtracers_finalize
+   use shr_wtracers_mod, only : shr_wtracers_init_directly_for_testing
+   use shr_wtracers_mod, only : shr_wtracers_check_tracer_ratios
+   use shr_wtracers_mod, only : WATER_SPECIES_NAME_BULK
+
+   use shr_kind_mod, only : r8=>SHR_KIND_R8
+   use shr_infnan_mod, only : assignment(=), nan => shr_infnan_nan
+   use ESMF, only : ESMF_SUCCESS
+
+   implicit none
+
+   @TestCase
+   type, extends(TestCase) :: TestShrWtracers
+   contains
+      procedure :: setUp
+      procedure :: tearDown
+   end type TestShrWtracers
+
+contains
+
+  subroutine setUp(this)
+     class(TestShrWtracers), intent(inout) :: this
+  end subroutine setUp
+
+  subroutine tearDown(this)
+     class(TestShrWtracers), intent(inout) :: this
+
+     integer :: rc
+
+     if (shr_wtracers_initialized()) then
+        call shr_wtracers_finalize(rc)
+     end if
+  end subroutine tearDown
+
+  ! ------------------------------------------------------------------------
+  ! Tests of shr_wtracers_check_tracer_ratios
+  ! ------------------------------------------------------------------------
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_both0(this)
+      ! The tracer ratio test should pass when both tracer and bulk are 0
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(4)
+      real(r8) :: tracers(3, 4)
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = [2._r8, 2._r8, 2._r8], &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(:) = 0._r8
+      tracers(:,:) = 0._r8
+
+      ! The test passes if the following call runs successfully without aborting
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+   end subroutine test_shr_wtracers_check_tracer_ratios_both0
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_correct(this)
+      ! The tracer ratio test should pass when the tracer ratios are correct
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(4)
+      real(r8) :: tracers(3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      do i = 1, 3
+         tracers(i,:) = ratios(i) * bulk(:)
+      end do
+
+      ! The test passes if the following call runs successfully without aborting
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+   end subroutine test_shr_wtracers_check_tracer_ratios_correct
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_differ(this)
+      ! The tracer ratio test should fail when some tracer ratio differs from expected
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(4)
+      real(r8) :: tracers(3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      do i = 1, 3
+         tracers(i,:) = ratios(i) * bulk(:)
+      end do
+      tracers(2,3) = tracers(2,3) * 1.1_r8
+
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
+   end subroutine test_shr_wtracers_check_tracer_ratios_differ
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_tracer0(this)
+      ! The tracer ratio test should fail when some tracer value is zero despite non-zero bulk
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(4)
+      real(r8) :: tracers(3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      do i = 1, 3
+         tracers(i,:) = ratios(i) * bulk(:)
+      end do
+      tracers(2,3) = 0._r8
+
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
+   end subroutine test_shr_wtracers_check_tracer_ratios_tracer0
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_bulk0(this)
+      ! The tracer ratio test should fail when some bulk value is zero despite non-zero tracer
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(4)
+      real(r8) :: tracers(3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      do i = 1, 3
+         tracers(i,:) = ratios(i) * bulk(:)
+      end do
+      bulk(3) = 0._r8
+
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer1', at index 3")
+   end subroutine test_shr_wtracers_check_tracer_ratios_bulk0
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_bothnan(this)
+      ! The tracer ratio test should pass when both tracer and bulk are NaN
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(4)
+      real(r8) :: tracers(3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      do i = 1, 3
+         tracers(i,:) = ratios(i) * bulk(:)
+      end do
+      bulk(3) = nan
+      tracers(:,3) = nan
+
+      ! The test passes if the following call runs successfully without aborting
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+   end subroutine test_shr_wtracers_check_tracer_ratios_bothnan
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_tracernan(this)
+      ! The tracer ratio test should fail when some tracer value is NaN despite non-NaN bulk
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(4)
+      real(r8) :: tracers(3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      do i = 1, 3
+         tracers(i,:) = ratios(i) * bulk(:)
+      end do
+      tracers(2,3) = nan
+
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
+   end subroutine test_shr_wtracers_check_tracer_ratios_tracernan
+
+   ! ------------------------------------------------------------------------
+   ! Tests of shr_wtracers_check_tracer_ratios with 2-d bulk arrays
+   ! ------------------------------------------------------------------------
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_2d_correct(this)
+      ! The tracer ratio test should pass when the tracer ratios are correct (2-d bulk)
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(2, 4)
+      real(r8) :: tracers(2, 3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i, j
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(1,:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      bulk(2,:) = [5._r8, 6._r8, 7._r8, 8._r8]
+      do i = 1, 3
+         do j = 1, 2
+            tracers(j,i,:) = ratios(i) * bulk(j,:)
+         end do
+      end do
+
+      ! The test passes if the following call runs successfully without aborting
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+   end subroutine test_shr_wtracers_check_tracer_ratios_2d_correct
+
+   @Test
+   subroutine test_shr_wtracers_check_tracer_ratios_2d_differ(this)
+      ! The tracer ratio test should fail when some tracer ratio differs from expected (2-d bulk)
+      class(TestShrWtracers), intent(inout) :: this
+      integer :: rc
+      real(r8) :: bulk(2, 4)
+      real(r8) :: tracers(2, 3, 4)
+      real(r8), parameter :: ratios(3) = [2._r8, 3._r8, 4._r8]
+      integer :: i, j
+
+      call shr_wtracers_init_directly_for_testing( &
+           water_tracer_names = ["tracer1", "tracer2", "tracer3"], &
+           water_tracer_species = [WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK, WATER_SPECIES_NAME_BULK], &
+           water_tracer_initial_ratios = ratios, &
+           rc = rc)
+      @assertEqual(ESMF_SUCCESS, rc)
+
+      bulk(1,:) = [1._r8, 2._r8, 3._r8, 4._r8]
+      bulk(2,:) = [5._r8, 6._r8, 7._r8, 8._r8]
+      do i = 1, 3
+         do j = 1, 2
+            tracers(j,i,:) = ratios(i) * bulk(j,:)
+         end do
+      end do
+      tracers(2,2,3) = tracers(2,2,3) * 1.1_r8
+
+      call shr_wtracers_check_tracer_ratios(tracers, bulk, "test")
+      @assertExceptionRaised("ABORTED: shr_wtracers_check_tracer_ratios ERROR: tracer does not agree with bulk water for variable 'test', tracer 'tracer2', at index 3")
+   end subroutine test_shr_wtracers_check_tracer_ratios_2d_differ
+
+end module test_shr_wtracers

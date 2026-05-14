@@ -16,11 +16,13 @@ module shr_wtracers_mod
    !---------------------------------------------------------------------
 
    use shr_kind_mod      , only : r8=>SHR_KIND_R8
-   use shr_kind_mod      , only : CS=>SHR_KIND_CS, CM=>SHR_KIND_CM, CXX=>SHR_KIND_CXX
+   use shr_kind_mod      , only : CS=>SHR_KIND_CS, CM=>SHR_KIND_CM, CX=>SHR_KIND_CX, CXX=>SHR_KIND_CXX
    use shr_log_mod       , only : shr_log_error
    use shr_log_mod       , only : s_logunit=>shr_log_Unit
+   use shr_log_mod       , only : s_loglev=>shr_log_Level
    use shr_string_mod    , only : shr_string_listGetAllNames, shr_string_toUpper
    use shr_string_mod    , only : shr_string_withoutSuffix
+   use shr_infnan_mod    , only : shr_infnan_isnan
    use shr_sys_mod       , only : shr_sys_abort
    use nuopc_shr_methods , only : chkerr
    use NUOPC             , only : NUOPC_CompAttributeGet
@@ -35,8 +37,11 @@ module shr_wtracers_mod
    !--------------------------------------------------------------------------
 
    public :: shr_wtracers_init              ! initialize water tracer information
+   public :: shr_wtracers_init_directly_for_testing ! initialize water tracer information directly for the sake of unit testing
    public :: shr_wtracers_finalize          ! finalize water tracer information
+   public :: shr_wtracers_initialized       ! return true if this module has been initialized
    public :: shr_wtracers_is_wtracer_field  ! return true if the given field name is a water tracer field
+   public :: shr_wtracers_get_bulk_fieldname ! return the name of the equivalent bulk field corresponding to a water tracer field
    public :: shr_wtracers_present           ! return true if there are water tracers in this simulation
    public :: shr_wtracers_get_num_tracers   ! get number of water tracers in this simulation
    public :: shr_wtracers_get_name          ! get the name of a given tracer
@@ -44,6 +49,12 @@ module shr_wtracers_mod
    public :: shr_wtracers_get_species_name  ! get the species name associated with a given tracer
    public :: shr_wtracers_is_isotope        ! return true if a given tracer is an isotope
    public :: shr_wtracers_get_initial_ratio ! get the initial ratio for a given tracer
+   public :: shr_wtracers_check_tracer_ratios ! check tracer ratios against expectations
+
+   interface shr_wtracers_check_tracer_ratios
+      module procedure shr_wtracers_check_tracer_ratios_1d
+      module procedure shr_wtracers_check_tracer_ratios_2d
+   end interface shr_wtracers_check_tracer_ratios
 
    !--------------------------------------------------------------------------
    ! Private interfaces
@@ -122,10 +133,72 @@ contains
 
       water_tracers_initialized = .true.
 
-      call shr_wtracers_print(maintask, rc=rc)
-      if (chkerr(rc,__LINE__,u_FILE_u)) return
+      if (s_loglev > 0) then
+         call shr_wtracers_print(maintask, rc=rc)
+         if (chkerr(rc,__LINE__,u_FILE_u)) return
+      end if
 
    end subroutine shr_wtracers_init
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_init_directly_for_testing( &
+              water_tracer_names, water_tracer_species, water_tracer_initial_ratios, rc)
+      !
+      ! !DESCRIPTION:
+      ! Initialize water tracer information directly for the sake of unit testing
+      !
+      ! If there are any errors, an ESMF error code is returned in rc
+      !
+      ! !ARGUMENTS
+      character(len=*), intent(in) :: water_tracer_names(:)
+      character(len=*), intent(in) :: water_tracer_species(:)  ! expected to be uppercase
+      real(r8), intent(in) :: water_tracer_initial_ratios(:)
+      integer, intent(out) :: rc
+      !
+      ! !LOCAL VARIABLES
+      character(len=*), parameter :: subname='shr_wtracers_init_directly_for_testing'
+      !---------------------------------------------------------------
+
+      rc = ESMF_SUCCESS
+
+      if (water_tracers_initialized) then
+         call shr_log_error("Attempt to call "//subname//" multiple times", rc=rc)
+         return
+      end if
+
+      num_tracers = size(water_tracer_names)
+      if (size(water_tracer_species) /= num_tracers .or. &
+          size(water_tracer_initial_ratios) /= num_tracers) then
+         call shr_log_error(subname//": Input array sizes disagree", rc=rc)
+         return
+      end if
+
+      tracer_names = water_tracer_names
+      tracer_species_names = water_tracer_species
+      call shr_wtracers_set_species_types(rc=rc)
+      if (chkerr(rc,__LINE__,u_FILE_u)) return
+      tracer_initial_ratios = water_tracer_initial_ratios
+
+      water_tracers_initialized = .true.
+
+   end subroutine shr_wtracers_init_directly_for_testing
+
+   !-----------------------------------------------------------------------
+   function shr_wtracers_initialized()
+      !
+      ! !DESCRIPTION:
+      ! Return true if this module has been initialized
+      !
+      ! !ARGUMENTS
+      logical :: shr_wtracers_initialized  ! function result
+      !
+      ! !LOCAL VARIABLES:
+      character(len=*), parameter :: subname='shr_wtracers_initialized'
+      !-----------------------------------------------------------------------
+
+      shr_wtracers_initialized = water_tracers_initialized
+
+   end function shr_wtracers_initialized
 
    !-----------------------------------------------------------------------
    subroutine shr_wtracers_parse_attributes(driver, rc)
@@ -344,15 +417,21 @@ contains
       ! !ARGUMENTS
       integer, intent(in) :: tracer_num
       character(len=*), intent(in) :: subname  ! name of the caller, for error message
+      !
+      ! !LOCAL VARIABLES
+      character(len=CX) :: msg
       !-----------------------------------------------------------------------
       if (tracer_num < 1 .or. tracer_num > num_tracers) then
-         write(s_logunit, '(A,I0)') subname//" ERROR: tracer_num out of range: ", tracer_num
          if (num_tracers == 0) then
-            write(s_logunit, '(A)') "(This simulation has no tracers.)"
+            write(msg, '(A,I0,A)') &
+                 subname//" ERROR: tracer_num out of range: ", tracer_num, &
+                 " (This simulation has no tracers.)"
          else
-            write(s_logunit, '(A,I0,A)') "(Valid range: 1 - ", num_tracers, ".)"
+            write(msg, '(A,I0,A,I0,A)') &
+                 subname//" ERROR: tracer_num out of range: ", tracer_num, &
+                 " (Valid range: 1 - ", num_tracers, ")"
          end if
-         call shr_sys_abort(subname//" ERROR: tracer_num out of range")
+         call shr_sys_abort(trim(msg))
       end if
    end subroutine shr_wtracers_check_tracer_num
 
@@ -373,6 +452,7 @@ contains
       ! !LOCAL VARIABLES:
       integer :: localrc
       logical :: is_tracer
+      character(len=CX) :: msg
 
       character(len=*), parameter :: subname='shr_wtracers_is_wtracer_field'
       !-----------------------------------------------------------------------
@@ -383,10 +463,56 @@ contains
            has_suffix = is_tracer, &
            rc = localrc)
       if (localrc /= 0) then
-         call shr_sys_abort(subname//": ERROR in shr_string_withoutSuffix")
+         write(msg, '(A,I0)') &
+              subname//": ERROR in shr_string_withoutSuffix for fieldname '"// &
+              trim(fieldname)//"', localrc = ", localrc
+         call shr_sys_abort(trim(msg))
       end if
       shr_wtracers_is_wtracer_field = is_tracer
    end function shr_wtracers_is_wtracer_field
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_get_bulk_fieldname(fieldname, is_wtracer_field, bulk_fieldname)
+      !
+      ! !DESCRIPTION:
+      ! Return the name of the equivalent bulk field corresponding to a water tracer field
+      !
+      ! If fieldname is the name of a water tracer field, based on naming conventions,
+      ! then is_wtracer_field will be true and bulk_fieldname will hold the name of the
+      ! corresponding bulk field.
+      !
+      ! If fieldname is *not* the name of a water tracer field, then is_wtracer_field will
+      ! be false, and bulk_fieldname will be the same as fieldname.
+      !
+      ! Note that, unlike most other routines in this module, this function works even if
+      ! the data in this module has not been initialized (i.e., even if shr_wtracers_init
+      ! has not been called): it works simply based on naming conventions.
+      !
+      ! !ARGUMENTS
+      character(len=*), intent(in)  :: fieldname
+      logical         , intent(out) :: is_wtracer_field
+      character(len=*), intent(out) :: bulk_fieldname
+      !
+      ! !LOCAL VARIABLES:
+      integer :: localrc
+      character(len=CX) :: msg
+
+      character(len=*), parameter :: subname='shr_wtracers_get_bulk_fieldname'
+      !-----------------------------------------------------------------------
+
+      call shr_string_withoutSuffix( &
+           in_str = fieldname, &
+           suffix = WTRACERS_SUFFIX, &
+           has_suffix = is_wtracer_field, &
+           out_str = bulk_fieldname, &
+           rc = localrc)
+      if (localrc /= 0) then
+         write(msg, '(A,I0)') &
+              subname//": ERROR in shr_string_withoutSuffix for fieldname '"// &
+              trim(fieldname)//"', localrc = ", localrc
+         call shr_sys_abort(trim(msg))
+      end if
+   end subroutine shr_wtracers_get_bulk_fieldname
 
    !-----------------------------------------------------------------------
    function shr_wtracers_present()
@@ -530,6 +656,162 @@ contains
 
       shr_wtracers_get_initial_ratio = tracer_initial_ratios(tracer_num)
    end function shr_wtracers_get_initial_ratio
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_check_tracer_ratios_1d(tracers, bulk, name, extra_dim_index)
+      !
+      ! !DESCRIPTION:
+      ! Check tracer ratios (tracer/bulk) against expectations
+      !
+      ! Aborts if any inconsistencies are found
+      !
+      ! Should only be called in simulations set up to maintain constant water tracer
+      ! ratios: in general, water tracers will deviate from their initial, fixed ratios,
+      ! and so it makes no sense to perform these checks since they will always fail.
+      !
+      ! !ARGUMENTS
+      real(r8), intent(in) :: tracers(:,:)  ! dimensioned [tracerNum, gridcell]
+      real(r8), intent(in) :: bulk(:)
+      character(len=*), intent(in) :: name  ! for diagnostic output
+      integer, intent(in), optional :: extra_dim_index  ! index of extra dimension (for error messages)
+      !
+      ! !LOCAL VARIABLES
+      integer :: n, i
+      logical :: arrays_equal
+      integer :: diff_tracer, diff_loc
+      real(r8) :: val_bulk, val_tracer
+      character(len=CX) :: msg
+
+      real(r8), parameter :: tolerance = 1.0e-7_r8
+
+      character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios_1d'
+      ! In some error messages, it makes more sense to print the generic name:
+      character(len=*), parameter :: subname_generic='shr_wtracers_check_tracer_ratios'
+      !-----------------------------------------------------------------------
+      if (.not. water_tracers_initialized) then
+         call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
+      end if
+      if (size(tracers, 1) /= num_tracers) then
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: unexpected number of tracers: size(tracers, 1) = ", &
+              size(tracers, 1), ", num_tracers = ", num_tracers
+         call shr_sys_abort(trim(msg))
+      end if
+      if (size(tracers, 2) /= size(bulk)) then
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: inconsistent sizes for tracers and bulk: size(tracers, 2) = ", &
+              size(tracers, 2), ", size(bulk) = ", size(bulk)
+         call shr_sys_abort(trim(msg))
+      end if
+
+      arrays_equal = .true.
+      tracer_loop: do n = 1, num_tracers
+         ! We may eventually want a mechanism to denote certain tracers as for-checking
+         ! and others not-for-checking (probably via another nuopc attribute parallel to
+         ! the other water tracers attributes). If we do, we could check that flag here
+         ! for tracer #n and go on to the next tracer if this is a not-for-checking
+         ! tracer.
+
+         do i = 1, size(bulk)
+            if (.not. shr_infnan_isnan(bulk(i)) .and. .not. shr_infnan_isnan(tracers(n,i))) then
+               ! neither value is nan: check error tolerance
+               val_bulk = bulk(i) * tracer_initial_ratios(n)
+               val_tracer = tracers(n,i)
+               if (abs(val_bulk - val_tracer) > tolerance * max(abs(val_bulk), abs(val_tracer))) then
+                  arrays_equal = .false.
+                  diff_tracer = n
+                  diff_loc = i
+                  exit tracer_loop
+               end if
+            else if (shr_infnan_isnan(bulk(i)) .and. shr_infnan_isnan(tracers(n,i))) then
+               ! both values are nan: values are considered equal (do nothing)
+            else
+               ! only one value is nan: not equal
+               arrays_equal = .false.
+               diff_tracer = n
+               diff_loc = i
+               exit tracer_loop
+            end if
+         end do
+      end do tracer_loop
+
+      if (.not. arrays_equal) then
+         write(s_logunit, '(A,A)') subname_generic, " ERROR: tracer does not agree with bulk water"
+         write(s_logunit, '(A,A)') "Variable: ", trim(name)
+         if (present(extra_dim_index)) then
+            write(s_logunit, '(A,I0)') "Extra dimension index: ", extra_dim_index
+         end if
+         write(s_logunit, '(A,I0,A,A)') "First difference found for tracer #", diff_tracer, &
+              ": ", tracer_names(diff_tracer)
+         write(s_logunit, '(A,I0)') "First difference at index: ", diff_loc
+         write(s_logunit, '(A, ES25.17)') "Bulk  : ", bulk(diff_loc)
+         write(s_logunit, '(A, ES25.17)') "Tracer: ", tracers(diff_tracer, diff_loc)
+         write(s_logunit, '(A, ES25.17)') "Expected ratio: ", tracer_initial_ratios(diff_tracer)
+         if (.not. shr_infnan_isnan(bulk(diff_loc))) then
+            write(s_logunit, '(A, ES25.17)') "Bulk*ratio: ", bulk(diff_loc) * tracer_initial_ratios(diff_tracer)
+         end if
+         write(msg, '(A,I0)') &
+              subname_generic//" ERROR: tracer does not agree with bulk water for variable '"// &
+              trim(name)//"', tracer '"//trim(tracer_names(diff_tracer))//"', at index ", diff_loc
+         call shr_sys_abort(trim(msg))
+      end if
+
+   end subroutine shr_wtracers_check_tracer_ratios_1d
+
+   !-----------------------------------------------------------------------
+   subroutine shr_wtracers_check_tracer_ratios_2d(tracers, bulk, name)
+      !
+      ! !DESCRIPTION:
+      ! Check tracer ratios (tracer/bulk) against expectations for 2-d bulk arrays
+      !
+      ! This is a lightweight wrapper around shr_wtracers_check_tracer_ratios_1d that
+      ! loops over the first dimension of the bulk array.
+      !
+      ! Aborts if any inconsistencies are found
+      !
+      ! Should only be called in simulations set up to maintain constant water tracer
+      ! ratios: in general, water tracers will deviate from their initial, fixed ratios,
+      ! and so it makes no sense to perform these checks since they will always fail.
+      !
+      ! !ARGUMENTS
+      real(r8), intent(in) :: tracers(:,:,:)  ! dimensioned [ungriddedDim, tracerNum, gridcell]
+      real(r8), intent(in) :: bulk(:,:)       ! dimensioned [ungriddedDim, gridcell]
+      character(len=*), intent(in) :: name    ! for diagnostic output
+      !
+      ! !LOCAL VARIABLES
+      integer :: i
+      character(len=CX) :: msg
+
+      character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios_2d'
+      !-----------------------------------------------------------------------
+      if (.not. water_tracers_initialized) then
+         call shr_sys_abort(subname//" ERROR: water tracers not yet initialized")
+      end if
+      if (size(tracers, 1) /= size(bulk, 1)) then
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: inconsistent size for tracers dim 1 and bulk dim 1: size(tracers, 1) = ", &
+              size(tracers, 1), ", size(bulk, 1) = ", size(bulk, 1)
+         call shr_sys_abort(trim(msg))
+      end if
+      if (size(tracers, 2) /= num_tracers) then
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: unexpected number of tracers: size(tracers, 2) = ", &
+              size(tracers, 2), ", num_tracers = ", num_tracers
+         call shr_sys_abort(trim(msg))
+      end if
+      if (size(tracers, 3) /= size(bulk, 2)) then
+         write(msg, '(A,I0,A,I0)') &
+              subname//" ERROR: inconsistent size for tracers dim 3 and bulk dim 2: size(tracers, 3) = ", &
+              size(tracers, 3), ", size(bulk, 2) = ", size(bulk, 2)
+         call shr_sys_abort(trim(msg))
+      end if
+
+      do i = 1, size(bulk, 1)
+         call shr_wtracers_check_tracer_ratios_1d(tracers(i,:,:), bulk(i,:), name, &
+              extra_dim_index=i)
+      end do
+
+   end subroutine shr_wtracers_check_tracer_ratios_2d
 
    !-----------------------------------------------------------------------
    subroutine shr_wtracers_finalize(rc)
