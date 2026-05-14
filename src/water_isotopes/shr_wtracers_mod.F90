@@ -16,7 +16,7 @@ module shr_wtracers_mod
    !---------------------------------------------------------------------
 
    use shr_kind_mod      , only : r8=>SHR_KIND_R8
-   use shr_kind_mod      , only : CS=>SHR_KIND_CS, CM=>SHR_KIND_CM, CXX=>SHR_KIND_CXX
+   use shr_kind_mod      , only : CS=>SHR_KIND_CS, CM=>SHR_KIND_CM, CX=>SHR_KIND_CX, CXX=>SHR_KIND_CXX
    use shr_log_mod       , only : shr_log_error
    use shr_log_mod       , only : s_logunit=>shr_log_Unit
    use shr_log_mod       , only : s_loglev=>shr_log_Level
@@ -419,7 +419,7 @@ contains
       character(len=*), intent(in) :: subname  ! name of the caller, for error message
       !
       ! !LOCAL VARIABLES
-      character(len=CXX) :: msg
+      character(len=CX) :: msg
       !-----------------------------------------------------------------------
       if (tracer_num < 1 .or. tracer_num > num_tracers) then
          if (num_tracers == 0) then
@@ -452,7 +452,7 @@ contains
       ! !LOCAL VARIABLES:
       integer :: localrc
       logical :: is_tracer
-      character(len=CXX) :: msg
+      character(len=CX) :: msg
 
       character(len=*), parameter :: subname='shr_wtracers_is_wtracer_field'
       !-----------------------------------------------------------------------
@@ -495,7 +495,7 @@ contains
       !
       ! !LOCAL VARIABLES:
       integer :: localrc
-      character(len=CXX) :: msg
+      character(len=CX) :: msg
 
       character(len=*), parameter :: subname='shr_wtracers_get_bulk_fieldname'
       !-----------------------------------------------------------------------
@@ -680,7 +680,7 @@ contains
       logical :: arrays_equal
       integer :: diff_tracer, diff_loc
       real(r8) :: val_bulk, val_tracer
-      character(len=CXX) :: msg
+      character(len=CX) :: msg
 
       real(r8), parameter :: tolerance = 1.0e-7_r8
 
@@ -780,7 +780,7 @@ contains
       !
       ! !LOCAL VARIABLES
       integer :: i
-      character(len=CXX) :: msg
+      character(len=CX) :: msg
 
       character(len=*), parameter :: subname='shr_wtracers_check_tracer_ratios_2d'
       !-----------------------------------------------------------------------
