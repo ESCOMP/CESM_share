@@ -3,7 +3,12 @@ module test_shr_wtracers
    ! Tests of shr_wtracers_mod
 
    use funit
-   use shr_wtracers_mod
+
+   use shr_wtracers_mod, only : shr_wtracers_initialized, shr_wtracers_finalize
+   use shr_wtracers_mod, only : shr_wtracers_init_directly_for_testing
+   use shr_wtracers_mod, only : shr_wtracers_check_tracer_ratios
+   use shr_wtracers_mod, only : WATER_SPECIES_NAME_BULK
+
    use shr_kind_mod, only : r8=>SHR_KIND_R8
    use shr_infnan_mod, only : assignment(=), nan => shr_infnan_nan
    use ESMF, only : ESMF_SUCCESS
