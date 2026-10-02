@@ -20,6 +20,8 @@ add_subdirectory(shr_vmath_test)
 
 add_subdirectory(shr_wtracers_test)
 
+add_subdirectory(shr_wiso_test)
+
 add_subdirectory(shr_wv_sat_test)
 
 add_subdirectory(shr_precip_test)

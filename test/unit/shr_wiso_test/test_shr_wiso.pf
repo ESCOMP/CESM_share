@@ -1,0 +1,589 @@
+module test_shr_wiso
+
+   ! Tests of shr_wiso_mod
+
+   ! modules and kinds needed for testing infrastructure
+   use funit
+   use shr_kind_mod, only: r8=>SHR_KIND_R8
+
+   ! shr_wtracers_mod variables needed for testing:
+   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_BULK
+   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H218O
+   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H217O
+   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_HDO
+
+   ! shr_wiso_mod routines being tested
+   use shr_wiso_mod, only: wiso_liq_vap_equil_frac_factor
+   use shr_wiso_mod, only: wiso_ice_vap_equil_frac_factor
+   use shr_wiso_mod, only: wiso_get_diffusivity_ratio
+   use shr_wiso_mod, only: icam_atm_ocn_kinetic_frac_factor
+
+   implicit none
+
+   @TestCase
+   type, extends(TestCase) :: TestShrWiso
+   contains
+      procedure :: setUp
+      procedure :: tearDown
+   end type TestShrWiso
+
+   ! parameters useful for testing
+
+   real(r8), parameter :: liq_temps(9) = [233._r8, 243._r8, 253._r8, 263._r8, &
+                                          273._r8, 283._r8, 293._r8, 303._r8, 313._r8]
+
+   real(r8), parameter :: ice_temps(8) = [203._r8, 213._r8, 223._r8, 233._r8, &
+                                          243._r8, 253._r8, 263._r8, 273._r8]
+
+   ! NOTE:  These should always match the equivalent parameters
+   !        listed in the 'wiso_get_diffusivity_ratio' function.
+   real(r8), parameter :: DIFF_RATIO_HDO   = 0.9757_r8
+   real(r8), parameter :: DIFF_RATIO_H218O = 0.9727_r8
+   real(r8), parameter :: DIFF_RATIO_H217O = DIFF_RATIO_H218O**0.5185_r8
+
+contains
+
+  subroutine setUp(this)
+     class(TestShrWiso), intent(inout) :: this
+  end subroutine setUp
+
+  subroutine tearDown(this)
+     class(TestShrWiso), intent(inout) :: this
+  end subroutine tearDown
+
+  ! ------------------------------------------------------------------------
+  ! Tests of wiso_liq_vap_equil_frac_factor function
+  ! ------------------------------------------------------------------------
+
+   @Test
+   subroutine test_shr_wiso_liq_vap_equil_frac_factor_h2o(this)
+      ! Test that the liquid/vapor equilibrium fractionation factor
+      ! function produces the correct value for H2O.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      integer, parameter :: h2o_spec_idx = 0
+
+      real(r8)           :: h2o_liq_vap_frac
+
+      ! Calculate the fractionation factor for H216O (H2O):
+      h2o_liq_vap_frac = wiso_liq_vap_equil_frac_factor(h2o_spec_idx, 273.15_r8)
+
+      ! Check that a bulk (H2O) water species always returns one:
+      @assertEqual(1._r8, h2o_liq_vap_frac)
+
+   end subroutine test_shr_wiso_liq_vap_equil_frac_factor_h2o
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_liq_vap_equil_frac_factor_bad_idx(this)
+      ! Test that the liquid/vapor equilibrium fractionation factor
+      ! function raises an exception when given a bad isotope species
+      ! index.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      integer, parameter :: bad_spec_idx = 78
+
+      real(r8)           :: bad_idx_frac
+
+      ! Try using a bad isotope index:
+      bad_idx_frac = wiso_liq_vap_equil_frac_factor(bad_spec_idx, 273.15_r8)
+
+      ! Check that an exception was raised:
+      @assertExceptionRaised("ABORTED: wiso_liq_vap_equil_frac_factor: ERROR: bad isotope species index; bad index = 78")
+
+   end subroutine test_shr_wiso_liq_vap_equil_frac_factor_bad_idx
+
+  !+++
+
+   @Test
+   subroutine test_shr_wiso_liq_vap_equil_frac_factor_h218o_properties(this)
+      ! Test that the reciprocal of the H218O liquid/vapor equilibrium fractionation
+      ! factor lies strictly between 0.7 and 1 for temperatures from 233 K to 313 K,
+      ! and that the reciprocal increases with increasing temperature.
+      !
+      ! Note that technically 0.7 is physically possible, just significantly outside the temperature
+      ! range seen in the Earth System.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      real(r8) :: vap_liq_frac_18O       ! Reciprocal of the H218O liquid/vapor equilibrium fractionation factor
+      real(r8) :: vap_liq_frac_18O_prev
+      integer  :: i
+
+      ! Calculate first function value, and check that it is greater than 0.7:
+      vap_liq_frac_18O_prev = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, liq_temps(1))
+
+      @assertGreaterThan(vap_liq_frac_18O_prev, 0.7_r8)
+
+      ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/liquid)
+      ! values increase with increasing temperature:
+      do i = 2, size(liq_temps)
+         vap_liq_frac_18O = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, liq_temps(i))
+
+         @assertGreaterThan(vap_liq_frac_18O, vap_liq_frac_18O_prev)
+         vap_liq_frac_18O_prev = vap_liq_frac_18O
+      end do
+
+      ! Finally, check that the last value is less than one:
+      @assertlessThan(vap_liq_frac_18O, 1._r8)
+
+   end subroutine test_shr_wiso_liq_vap_equil_frac_factor_h218o_properties
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_liq_vap_equil_frac_factor_h217o_properties(this)
+      ! Test that the reciprocal of the H217O liquid/vapor equilibrium fractionation
+      ! factor lies strictly between 0.7 and 1 for temperatures from 233 K to 313 K,
+      ! and that the reciprocal increases with increasing temperature.
+      !
+      ! Note that technically 0.7 is physically possible, just significantly outside
+      ! the temperature range seen in the Earth System.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      real(r8) :: vap_liq_frac_17O       ! Reciprocal of the H217O liquid/vapor equilibrium fractionation factor
+      real(r8) :: vap_liq_frac_17O_prev
+      integer  :: i
+
+      ! Calculate first function value, and check that it is greater than 0.7:
+      vap_liq_frac_17O_prev = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, liq_temps(1))
+
+      @assertGreaterThan(vap_liq_frac_17O_prev, 0.7_r8)
+
+      ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/liquid)
+      ! values increase with increasing temperature:
+      do i = 2, size(liq_temps)
+         vap_liq_frac_17O = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, liq_temps(i))
+
+         @assertGreaterThan(vap_liq_frac_17O, vap_liq_frac_17O_prev)
+         vap_liq_frac_17O_prev = vap_liq_frac_17O
+      end do
+
+      ! Finally, check that the last value is less than one:
+      @assertLessThan(vap_liq_frac_17O, 1._r8)
+
+   end subroutine test_shr_wiso_liq_vap_equil_frac_factor_h217o_properties
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_liq_vap_equil_frac_factor_hdo_properties(this)
+      ! Test that the reciprocal of the HDO liquid/vapor equilibrium fractionation
+      ! factor lies strictly between 0.7 and 1 for temperatures from 233 K to 313 K,
+      ! and that the reciprocal increases with increasing temperature.
+      !
+      ! Note that technically 0.7 is physically possible, just significantly outside
+      ! the temperature range seen in the Earth System.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      real(r8) :: vap_liq_frac_HDO       ! Reciprocal of the HDO liquid/vapor equilibrium fractionation factor
+      real(r8) :: vap_liq_frac_HDO_prev
+      integer  :: i
+
+      ! Calculate first function value, and check that it is greater than 0.7:
+      vap_liq_frac_HDO_prev = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, liq_temps(1))
+
+      @assertGreaterThan(vap_liq_frac_HDO_prev, 0.7_r8)
+
+      ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/liquid)
+      ! values increase with increasing temperature:
+      do i = 2, size(liq_temps)
+         vap_liq_frac_HDO = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, liq_temps(i))
+
+         @assertGreaterThan(vap_liq_frac_HDO, vap_liq_frac_HDO_prev)
+         vap_liq_frac_HDO_prev = vap_liq_frac_HDO
+      end do
+
+      ! Finally, check that the last value is less than one:
+      @assertLessThan(vap_liq_frac_HDO, 1._r8)
+
+   end subroutine test_shr_wiso_liq_vap_equil_frac_factor_hdo_properties
+
+  ! ------------------------------------------------------------------------
+  ! Tests of wiso_ice_vap_equil_frac_factor function
+  ! ------------------------------------------------------------------------
+
+   @Test
+   subroutine test_shr_wiso_ice_vap_equil_frac_factor_h2o(this)
+      ! Test that the ice/vapor equilibrium fractionation factor
+      ! function produces correct values for H2O.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      integer, parameter :: h2o_spec_idx = 0
+
+      real(r8)           :: h2o_ice_vap_frac
+
+      ! Calculate the fractionation factor for H216O (H2O):
+      h2o_ice_vap_frac = wiso_ice_vap_equil_frac_factor(h2o_spec_idx, 273.15_r8)
+
+      ! Check that a bulk (H2O) water species always returns one:
+      @assertEqual(1._r8, h2o_ice_vap_frac)
+
+   end subroutine test_shr_wiso_ice_vap_equil_frac_factor_h2o
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_ice_vap_equil_frac_factor_bad_idx(this)
+      ! Test that the ice/vapor equilibrium fractionation factor
+      ! function raises an exception when given a bad isotope species
+      ! index.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      integer, parameter :: bad_spec_idx = 78
+
+      real(r8)           :: bad_idx_frac
+
+      ! Try using a bad isotope index:
+      bad_idx_frac = wiso_ice_vap_equil_frac_factor(bad_spec_idx, 273.15_r8)
+
+      ! Check that an exception was raised:
+      @assertExceptionRaised("ABORTED: wiso_ice_vap_equil_frac_factor: ERROR: bad isotope species index; bad index = 78")
+
+   end subroutine test_shr_wiso_ice_vap_equil_frac_factor_bad_idx
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_ice_vap_equil_frac_factor_h218o_properties(this)
+      ! Test that the reciprocal of the H218O ice/vapor equilibrium fractionation
+      ! factor lies strictly between 0.7 and 1 for temperatures from 203 K to 273 K,
+      ! and that the reciprocal increases with increasing temperature.
+      !
+      ! Note that technically 0.7 is physically possible, just significantly outside
+      ! the temperature range seen in the Earth System.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      real(r8) :: vap_ice_frac_18O       ! Reciprocal of the H218O ice/vapor equilibrium fractionation factor
+      real(r8) :: vap_ice_frac_18O_prev
+      integer  :: i
+
+      ! Calculate first function value, and check that it is greater than 0.7:
+      vap_ice_frac_18O_prev = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, ice_temps(1))
+
+      @assertGreaterThan(vap_ice_frac_18O_prev, 0.7_r8)
+
+      ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/ice)
+      ! values increase with increasing temperature:
+      do i = 2, size(ice_temps)
+         vap_ice_frac_18O = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, ice_temps(i))
+
+         @assertGreaterThan(vap_ice_frac_18O, vap_ice_frac_18O_prev)
+         vap_ice_frac_18O_prev = vap_ice_frac_18O
+      end do
+
+      ! Finally, check that the last value is less than one:
+      @assertLessThan(vap_ice_frac_18O, 1._r8)
+
+   end subroutine test_shr_wiso_ice_vap_equil_frac_factor_h218o_properties
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_ice_vap_equil_frac_factor_h217o_properties(this)
+      ! Test that the reciprocal of the H217O ice/vapor equilibrium fractionation
+      ! factor lies strictly between 0.7 and 1 for temperatures from 203 K to 273 K,
+      ! and that the reciprocal increases with increasing temperature.
+      !
+      ! Note that technically 0.7 is physically possible, just significantly outside
+      ! the temperature range seen in the Earth System.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      real(r8) :: vap_ice_frac_17O       ! Reciprocal of the H217O ice/vapor equilibrium fractionation factor
+      real(r8) :: vap_ice_frac_17O_prev
+      integer  :: i
+
+      ! Calculate first function value, and check that it is greater than 0.7:
+      vap_ice_frac_17O_prev = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, ice_temps(1))
+
+      @assertGreaterThan(vap_ice_frac_17O_prev, 0.7_r8)
+
+      ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/ice)
+      ! values increase with increasing temperature:
+      do i = 2, size(ice_temps)
+         vap_ice_frac_17O = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, ice_temps(i))
+
+         @assertGreaterThan(vap_ice_frac_17O, vap_ice_frac_17O_prev)
+         vap_ice_frac_17O_prev = vap_ice_frac_17O
+      end do
+
+      ! Finally, check that the last value is less than one:
+      @assertlessThan(vap_ice_frac_17O, 1._r8)
+
+   end subroutine test_shr_wiso_ice_vap_equil_frac_factor_h217o_properties
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_ice_vap_equil_frac_factor_hdo_properties(this)
+      ! Test that the reciprocal of the HDO ice/vapor equilibrium fractionation
+      ! factor lies strictly between 0.7 and 1 for temperatures from 203 K to 273 K,
+      ! and that the reciprocal increases with increasing temperature.
+      !
+      ! Note that technically 0.7 is physically possible, just significantly outside
+      ! the temperature range seen in the Earth System.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      real(r8) :: vap_ice_frac_HDO       ! Reciprocal of the HDO ice/vapor equilibrium fractionation factor
+      real(r8) :: vap_ice_frac_HDO_prev
+      integer  :: i
+
+      ! Calculate first function value, and check that it is greater than 0.7:
+      vap_ice_frac_HDO_prev = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, ice_temps(1))
+
+      @assertGreaterThan(vap_ice_frac_HDO_prev, 0.7_r8)
+
+      ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/ice)
+      ! values increase with increasing temperature:
+      do i = 2, size(ice_temps)
+         vap_ice_frac_HDO = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, ice_temps(i))
+
+         @assertGreaterThan(vap_ice_frac_HDO, vap_ice_frac_HDO_prev)
+         vap_ice_frac_HDO_prev = vap_ice_frac_HDO
+      end do
+
+      ! Finally, check that the last value is less than one:
+      @assertLessThan(vap_ice_frac_HDO, 1._r8)
+
+   end subroutine test_shr_wiso_ice_vap_equil_frac_factor_hdo_properties
+
+  ! ------------------------------------------------------------------------
+  ! Tests of wiso_get_diffusivity_ratio function
+  ! ------------------------------------------------------------------------
+
+   @Test
+   subroutine test_shr_wiso_get_diffusivity_ratio_values(this)
+      ! Test that the diffusivity ratio function returns the correct
+      ! value for all water species.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      @assertEqual(1._r8,            wiso_get_diffusivity_ratio(WATER_SPECIES_TYPE_BULK))
+      @assertEqual(DIFF_RATIO_H218O, wiso_get_diffusivity_ratio(WATER_SPECIES_TYPE_H218O))
+      @assertEqual(DIFF_RATIO_H217O, wiso_get_diffusivity_ratio(WATER_SPECIES_TYPE_H217O))
+      @assertEqual(DIFF_RATIO_HDO,   wiso_get_diffusivity_ratio(WATER_SPECIES_TYPE_HDO))
+
+   end subroutine test_shr_wiso_get_diffusivity_ratio_values
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_get_diffusivity_ratio_bad_idx(this)
+      ! Test that the diffusivity ratio function raises an exception
+      ! when given a bad isotope species index.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      integer, parameter :: bad_spec_idx = 78
+
+      real(r8) :: diff_ratio
+
+      diff_ratio = wiso_get_diffusivity_ratio(bad_spec_idx)
+
+      @assertExceptionRaised("ABORTED: wiso_get_diffusivity_ratio: ERROR: bad isotope species index; bad index = 78")
+
+   end subroutine test_shr_wiso_get_diffusivity_ratio_bad_idx
+
+  ! ------------------------------------------------------------------------
+  ! Tests of icam_atm_ocn_kinetic_frac_factor function
+  ! ------------------------------------------------------------------------
+
+   @Test
+   subroutine test_shr_wiso_atm_ocn_kinetic_frac_diff_ratio(this)
+      ! Test that the kinetic fractionation factor increases as the isotopic
+      ! diffusion ratio increases.
+      !
+      ! In general the kinetic fractionation factor should be smallest (i.e.
+      ! produce the greatest vapor ratio difference) for H218O,
+      ! because it is the most massive.
+      !
+      ! HDO should also be smaller (or have a larger vapor ratio difference)
+      ! relative to H217O, but in this case it is not strictly the mass
+      ! difference that is the culprit, but instead other molecular properties
+      ! (e.g. a loss of symmetry in HDO).
+
+      class(TestShrWiso), intent(inout) :: this
+
+      ! Fixed inputs (rough regime):
+      real(r8), parameter :: rbot  = 1.2_r8     ! density of lowest layer [kg m-3]
+      real(r8), parameter :: zbot  = 30._r8     ! height of lowest atmospheric layer [m]
+      real(r8), parameter :: zoq   = 1.e-3_r8   ! surface roughness length for water [m]
+      real(r8), parameter :: ustar = 0.5_r8     ! friction velocity [m s-1]
+
+      real(r8) :: alpkn_18O   ! kinetic fractionation factor for H218O
+      real(r8) :: alpkn_17O   ! kinetic fractionation factor for H217O
+      real(r8) :: alpkn_HDO   ! kinetic fractionation factor for HDO
+
+      ! Calculate the kinetic fractionation factor for each isotopic species:
+      alpkn_18O = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustar, DIFF_RATIO_H218O)
+      alpkn_HDO = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustar, DIFF_RATIO_HDO)
+      alpkn_17O = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustar, DIFF_RATIO_H217O)
+
+      ! Heavy isotopologues generally never diffuse faster than
+      ! lighter isotopologues, so ensure values are always less than one:
+      @assertLessThan(alpkn_18O, 1._r8)
+      @assertLessThan(alpkn_HDO, 1._r8)
+      @assertLessThan(alpkn_17O, 1._r8)
+
+      ! There is likely a theoretical lower limit greater than zero
+      ! but for these tests just set a number that is very unlikely
+      ! to be seen in the Earth System, at least for atmosphere/ocean
+      ! fluxes:
+      @assertGreaterThan(alpkn_18O, 0.7_r8)
+      @assertGreaterThan(alpkn_HDO, 0.7_r8)
+      @assertGreaterThan(alpkn_17O, 0.7_r8)
+
+      ! The factor should increase as the diffusion ratio increases:
+      @assertLessThan(alpkn_18O, alpkn_HDO)
+      @assertLessThan(alpkn_HDO, alpkn_17O)
+
+   end subroutine test_shr_wiso_atm_ocn_kinetic_frac_diff_ratio
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_atm_ocn_kinetic_frac_ustar_rough(this)
+      ! Test that, in the rough regime, the kinetic fractionation factor
+      ! decreases (i.e. the vapor ratio difference increases) as the
+      ! friction velocity increases, with all other inputs held fixed.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      ! Fixed inputs (rough regime):
+      real(r8), parameter :: rbot = 1.2_r8      ! density of lowest layer [kg m-3]
+      real(r8), parameter :: zbot = 30._r8      ! height of lowest atmospheric layer [m]
+      real(r8), parameter :: zoq  = 1.e-3_r8    ! surface roughness length for water [m]
+
+      ! Monotonically increasing friction velocities [m s-1]:
+      real(r8), parameter :: ustars(5) = [0.1_r8, 0.2_r8, 0.4_r8, 0.8_r8, 1.0_r8]
+
+      real(r8) :: alpkn        ! kinetic fractionation factor
+      real(r8) :: alpkn_prev
+      integer  :: i
+
+      ! Calculate the first kinetic fractionation factor value (using H218O):
+      alpkn_prev = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(1), DIFF_RATIO_H218O)
+
+      ! check that it is less than the physically-allowed upper limit:
+      @assertLessThan(alpkn_prev, 1._r8)
+
+      ! Loop over the remaining friction velocities, checking that the factor
+      ! decreases as ustar increases:
+      do i = 2, size(ustars)
+         alpkn = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(i), DIFF_RATIO_H218O)
+
+         @assertLessThan(alpkn, alpkn_prev)
+         alpkn_prev = alpkn
+      end do
+
+      ! Check that the final value is still greater than the expected lower limit:
+      @assertGreaterThan(alpkn_prev, 0.7_r8)
+
+   end subroutine test_shr_wiso_atm_ocn_kinetic_frac_ustar_rough
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_atm_ocn_kinetic_frac_zoq_rough(this)
+      ! Test that, in the rough regime, the kinetic fractionation factor
+      ! decreases (i.e. the vapor ratio difference increases) as the
+      ! surface roughness length (zoq) increases, with all other
+      ! inputs held fixed.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      ! Fixed inputs (rough regime):
+      real(r8), parameter :: rbot  = 1.2_r8     ! density of lowest layer [kg m-3]
+      real(r8), parameter :: zbot  = 30._r8     ! height of lowest atmospheric layer [m]
+      real(r8), parameter :: ustar = 0.5_r8     ! friction velocity [m s-1]
+
+      ! Monotonically increasing surface roughness lengths [m]:
+      real(r8), parameter :: zoqs(5) = [5.e-4_r8, 1.e-3_r8, 2.e-3_r8, 4.e-3_r8, 8.e-3_r8]
+
+      real(r8) :: alpkn        ! kinetic fractionation factor
+      real(r8) :: alpkn_prev
+      integer  :: i
+
+      ! Calculate the first kinetic fractionation factor value (using H218O):
+      alpkn_prev = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoqs(1), ustar, DIFF_RATIO_H218O)
+
+      ! check that it is less than the physically-allowed upper limit:
+      @assertLessThan(alpkn_prev, 1._r8)
+
+      ! Loop over the remaining roughness lengths, checking that the factor
+      ! decreases as zoq increases:
+      do i = 2, size(zoqs)
+         alpkn = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoqs(i), ustar, DIFF_RATIO_H218O)
+
+         @assertLessThan(alpkn, alpkn_prev)
+         alpkn_prev = alpkn
+      end do
+
+      ! Check that the final value is still greater than the expected lower limit:
+      @assertGreaterThan(alpkn_prev, 0.7_r8)
+
+   end subroutine test_shr_wiso_atm_ocn_kinetic_frac_zoq_rough
+
+   !+++
+
+   @Test
+   subroutine test_shr_wiso_atm_ocn_kinetic_frac_ustar_smooth(this)
+      ! Test that, in the smooth regime, the kinetic fractionation factor
+      ! increases (i.e. the vapor ratio difference decreases )as the friction
+      ! velocity (ustar) increases, with all other inputs held fixed.
+      !
+      ! Note that this is the opposite of the behavior in the rough regime,
+      ! as the fluid should theoretically still be laminar, and thus
+      ! an increase in wind speed results in an increase in parcel deformation
+      ! and thus more efficient molecular diffusion.  At least this is my
+      ! working hypothesis. -JN.
+      !
+      ! A small roughness length is used here so that the surface Reynolds
+      ! number stays below the critical value (i.e. the smooth regime) for all
+      ! of the friction velocities tested below.
+
+      class(TestShrWiso), intent(inout) :: this
+
+      ! Fixed inputs (smooth regime):
+      real(r8), parameter :: rbot = 1.2_r8      ! density of lowest layer [kg m-3]
+      real(r8), parameter :: zbot = 30._r8      ! height of lowest atmospheric layer [m]
+      real(r8), parameter :: zoq  = 1.e-4_r8    ! surface roughness length for water [m]
+
+      ! Monotonically increasing friction velocities [m s-1]:
+      real(r8), parameter :: ustars(5) = [0.02_r8, 0.04_r8, 0.06_r8, 0.08_r8, 0.1_r8]
+
+      real(r8) :: alpkn        ! kinetic fractionation factor
+      real(r8) :: alpkn_prev
+      integer  :: i
+
+      ! Calculate the first kinetic fractionation factor value (using H218O):
+      alpkn_prev = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(1), DIFF_RATIO_H218O)
+
+      ! Check that it is greater than the expected lower limit:
+      @assertGreaterThan(alpkn_prev, 0.7_r8)
+
+      ! Loop over the remaining friction velocities,
+      ! checking that the factor increases as ustar increases:
+      do i = 2, size(ustars)
+         alpkn = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(i), DIFF_RATIO_H218O)
+
+         @assertGreaterThan(alpkn, alpkn_prev)
+         alpkn_prev = alpkn
+      end do
+
+      ! check that the final value is less than the physically-allowed upper limit:
+      @assertLessThan(alpkn_prev, 1._r8)
+
+   end subroutine test_shr_wiso_atm_ocn_kinetic_frac_ustar_smooth
+
+end module test_shr_wiso
