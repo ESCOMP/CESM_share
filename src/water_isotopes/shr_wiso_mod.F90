@@ -33,33 +33,6 @@ module shr_wiso_mod
 
   public :: icam_atm_ocn_kinetic_frac_factor ! Function for calculating kinetic fractionation factor for isotopic atm/ocn fluxes.
 
-!++++++++++++++++++++++++++++++++++++++++++
-! Physical constants for isotopic molecules
-!++++++++++++++++++++++++++++++++++++++++++
-
-! Diffusivity ratios for HDO and H218O relative to H216O:
-
-! Values from:
-
-! Merlivat, L.,
-! Molecular diffusivities of H216O, HD16O, and H218O in gases
-! Journal of Chemical Physics, 69, 2864-2871, September 1978
-! DOI: 10.1063/1.436884
-
-real(r8), parameter, public :: DIFF_RATIO_HDO   = 0.9757_r8
-real(r8), parameter, public :: DIFF_RATIO_H218O = 0.9727_r8
-
-! Diffusivity ratio for H217O relative to H216O:
-
-! Exponent value from:
-
-! Barkan, E. and B. Luz,
-! Diffusivity fractionations of H216O/H217O and H216O/H218O in air and their implications for isotope hydrology
-! Rapid Communications in Mass Spectrometry, 21, 2999-3005, August 2007
-! DOI: 10.1002/rcm.3180
-
-real(r8), parameter, public :: DIFF_RATIO_H217O = DIFF_RATIO_H218O**0.5185
-
 !=======================================================================
 
 contains
@@ -404,6 +377,25 @@ contains
     ! Character array to store abort error message
     character(len=cl) :: abort_msg
 
+    ! Diffusivity ratios for HDO and H218O relative to H216O, values from:
+
+    ! Merlivat, L.,
+    ! Molecular diffusivities of H216O, HD16O, and H218O in gases
+    ! Journal of Chemical Physics, 69, 2864-2871, September 1978
+    ! DOI: 10.1063/1.436884
+
+    real(r8), parameter :: DIFF_RATIO_HDO   = 0.9757_r8
+    real(r8), parameter :: DIFF_RATIO_H218O = 0.9727_r8
+
+    ! Diffusivity ratio for H217O relative to H216O, exponent value from:
+
+    ! Barkan, E. and B. Luz,
+    ! Diffusivity fractionations of H216O/H217O and H216O/H218O in air and their implications for isotope hydrology
+    ! Rapid Communications in Mass Spectrometry, 21, 2999-3005, August 2007
+    ! DOI: 10.1002/rcm.3180
+
+    real(r8), parameter :: DIFF_RATIO_H217O = DIFF_RATIO_H218O**0.5185_r8
+
     !-----------------------------------------------------------------------
 
     ! Initialize the diffusion ratio to a huge negative (unphysical) value:
@@ -476,13 +468,13 @@ contains
     real(r8) :: alpkn ! kinetic fractionation factor (1-kmol)
 
     !------------------------- Local Variables -----------------------------
-    real(r8) reno               ! surface reynolds number
-    real(r8) tmr                ! ratio of turbulent to molecular resistance
-    real(r8) enn                ! diffusive power
-    real(r8) sc                 ! Schmidt number (Prandtl number)
-    real(r8) vmu                ! kinematic viscocity of air
-    real(r8) difn               ! ratio of difusivities to the power of n
-    real(r8) kmol               ! Merlivat'ss "k_mol"
+    real(r8) :: reno                    ! surface reynolds number
+    real(r8) :: tmr                     ! ratio of turbulent to molecular resistance
+    real(r8) :: enn                     ! diffusive power
+    real(r8) :: sc                      ! Schmidt number (Prandtl number)
+    real(r8) :: vmu                     ! kinematic viscocity of air
+    real(r8) :: difn                    ! ratio of difusivities to the power of n
+    real(r8) :: kmol                    ! Merlivat's "k_mol"
 
     real(r8), parameter :: recrit   = 1.0_r8  ! critical Reynolds number for kmol
     !-----------------------------------------------------------------------
@@ -491,10 +483,10 @@ contains
     Sc  = vmu / difair          ! Schmidt number
     reno = ustar*zoq / vmu      ! Reynolds number
 
-    if (reno < recrit) then ! Smooth regime (Re < 0.13)
+    if (reno < recrit) then ! Smooth regime
       enn = 2._r8/3._r8
       tmr  = ( (1._r8/karman)*log(ustar*zbot / (30._r8 * vmu)) ) / (13.6_r8 * Sc**(2._r8/3._r8))
-    else                    ! Rough regime (Re > 2)
+    else                    ! Rough regime
       enn = 1._r8/2._r8
       tmr  = ( (1._r8/karman)*log(zbot/zoq) - 5._r8) / (7.3_r8 * reno**(1._r8/4._r8) * Sc**(1._r8/2._r8))
     end if

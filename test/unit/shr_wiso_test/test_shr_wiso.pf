@@ -18,12 +18,6 @@ module test_shr_wiso
    use shr_wiso_mod, only: wiso_get_diffusivity_ratio
    use shr_wiso_mod, only: icam_atm_ocn_kinetic_frac_factor
 
-   ! shr_wiso_mod parameters being tested
-   use shr_wiso_mod, only: DIFF_RATIO_H218O
-   use shr_wiso_mod, only: DIFF_RATIO_H217O
-   use shr_wiso_mod, only: DIFF_RATIO_HDO
-
-
    implicit none
 
    @TestCase
@@ -40,6 +34,10 @@ module test_shr_wiso
 
    real(r8), parameter :: ice_temps(8) = [203._r8, 213._r8, 223._r8, 233._r8, &
                                           243._r8, 253._r8, 263._r8, 273._r8]
+
+   real(r8), parameter :: DIFF_RATIO_HDO   = 0.9757_r8
+   real(r8), parameter :: DIFF_RATIO_H218O = 0.9727_r8
+   real(r8), parameter :: DIFF_RATIO_H217O = DIFF_RATIO_H218O**0.5185_r8
 
 contains
 
@@ -116,19 +114,19 @@ contains
       ! Calculate first function value, and check that it is greater than 0.7:
       vap_liq_frac_18O_prev = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, liq_temps(1))
 
-      @assertTrue(vap_liq_frac_18O_prev > 0.7_r8)
+      @assertGreaterThan(vap_liq_frac_18O_prev, 0.7_r8)
 
       ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/liquid)
       ! values increase with increasing temperature:
       do i = 2, size(liq_temps)
          vap_liq_frac_18O = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, liq_temps(i))
 
-         @assertTrue(vap_liq_frac_18O > vap_liq_frac_18O_prev)
+         @assertGreaterThan(vap_liq_frac_18O, vap_liq_frac_18O_prev)
          vap_liq_frac_18O_prev = vap_liq_frac_18O
       end do
 
       ! Finally, check that the last value is less than one:
-      @assertTrue(vap_liq_frac_18O < 1._r8)
+      @assertlessThan(vap_liq_frac_18O, 1._r8)
 
    end subroutine test_shr_wiso_liq_vap_equil_frac_factor_h218o_properties
 
@@ -152,19 +150,19 @@ contains
       ! Calculate first function value, and check that it is greater than 0.7:
       vap_liq_frac_17O_prev = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, liq_temps(1))
 
-      @assertTrue(vap_liq_frac_17O_prev > 0.7_r8)
+      @assertGreaterThan(vap_liq_frac_17O_prev, 0.7_r8)
 
       ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/liquid)
       ! values increase with increasing temperature:
       do i = 2, size(liq_temps)
          vap_liq_frac_17O = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, liq_temps(i))
 
-         @assertTrue(vap_liq_frac_17O > vap_liq_frac_17O_prev)
+         @assertGreaterThan(vap_liq_frac_17O, vap_liq_frac_17O_prev)
          vap_liq_frac_17O_prev = vap_liq_frac_17O
       end do
 
       ! Finally, check that the last value is less than one:
-      @assertTrue(vap_liq_frac_17O < 1._r8)
+      @assertLessThan(vap_liq_frac_17O, 1._r8)
 
    end subroutine test_shr_wiso_liq_vap_equil_frac_factor_h217o_properties
 
@@ -188,19 +186,19 @@ contains
       ! Calculate first function value, and check that it is greater than 0.7:
       vap_liq_frac_HDO_prev = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, liq_temps(1))
 
-      @assertTrue(vap_liq_frac_HDO_prev > 0.7_r8)
+      @assertGreaterThan(vap_liq_frac_HDO_prev, 0.7_r8)
 
       ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/liquid)
       ! values increase with increasing temperature:
       do i = 2, size(liq_temps)
          vap_liq_frac_HDO = 1._r8 / wiso_liq_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, liq_temps(i))
 
-         @assertTrue(vap_liq_frac_HDO > vap_liq_frac_HDO_prev)
+         @assertGreaterThan(vap_liq_frac_HDO, vap_liq_frac_HDO_prev)
          vap_liq_frac_HDO_prev = vap_liq_frac_HDO
       end do
 
       ! Finally, check that the last value is less than one:
-      @assertTrue(vap_liq_frac_HDO < 1._r8)
+      @assertLessThan(vap_liq_frac_HDO, 1._r8)
 
    end subroutine test_shr_wiso_liq_vap_equil_frac_factor_hdo_properties
 
@@ -269,19 +267,19 @@ contains
       ! Calculate first function value, and check that it is greater than 0.7:
       vap_ice_frac_18O_prev = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, ice_temps(1))
 
-      @assertTrue(vap_ice_frac_18O_prev > 0.7_r8)
+      @assertGreaterThan(vap_ice_frac_18O_prev, 0.7_r8)
 
       ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/ice)
       ! values increase with increasing temperature:
       do i = 2, size(ice_temps)
          vap_ice_frac_18O = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H218O, ice_temps(i))
 
-         @assertTrue(vap_ice_frac_18O > vap_ice_frac_18O_prev)
+         @assertGreaterThan(vap_ice_frac_18O, vap_ice_frac_18O_prev)
          vap_ice_frac_18O_prev = vap_ice_frac_18O
       end do
 
       ! Finally, check that the last value is less than one:
-      @assertTrue(vap_ice_frac_18O < 1._r8)
+      @assertLessThan(vap_ice_frac_18O, 1._r8)
 
    end subroutine test_shr_wiso_ice_vap_equil_frac_factor_h218o_properties
 
@@ -305,19 +303,19 @@ contains
       ! Calculate first function value, and check that it is greater than 0.7:
       vap_ice_frac_17O_prev = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, ice_temps(1))
 
-      @assertTrue(vap_ice_frac_17O_prev > 0.7_r8)
+      @assertGreaterThan(vap_ice_frac_17O_prev, 0.7_r8)
 
       ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/ice)
       ! values increase with increasing temperature:
       do i = 2, size(ice_temps)
          vap_ice_frac_17O = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_H217O, ice_temps(i))
 
-         @assertTrue(vap_ice_frac_17O > vap_ice_frac_17O_prev)
+         @assertGreaterThan(vap_ice_frac_17O, vap_ice_frac_17O_prev)
          vap_ice_frac_17O_prev = vap_ice_frac_17O
       end do
 
       ! Finally, check that the last value is less than one:
-      @assertTrue(vap_ice_frac_17O < 1._r8)
+      @assertlessThan(vap_ice_frac_17O, 1._r8)
 
    end subroutine test_shr_wiso_ice_vap_equil_frac_factor_h217o_properties
 
@@ -341,19 +339,19 @@ contains
       ! Calculate first function value, and check that it is greater than 0.7:
       vap_ice_frac_HDO_prev = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, ice_temps(1))
 
-      @assertTrue(vap_ice_frac_HDO_prev > 0.7_r8)
+      @assertGreaterThan(vap_ice_frac_HDO_prev, 0.7_r8)
 
       ! Now loop over the rest of the temperatures, checking that the reciprocal (vapor/ice)
       ! values increase with increasing temperature:
       do i = 2, size(ice_temps)
          vap_ice_frac_HDO = 1._r8 / wiso_ice_vap_equil_frac_factor(WATER_SPECIES_TYPE_HDO, ice_temps(i))
 
-         @assertTrue(vap_ice_frac_HDO > vap_ice_frac_HDO_prev)
+         @assertGreaterThan(vap_ice_frac_HDO, vap_ice_frac_HDO_prev)
          vap_ice_frac_HDO_prev = vap_ice_frac_HDO
       end do
 
       ! Finally, check that the last value is less than one:
-      @assertTrue(vap_ice_frac_HDO < 1._r8)
+      @assertLessThan(vap_ice_frac_HDO, 1._r8)
 
    end subroutine test_shr_wiso_ice_vap_equil_frac_factor_hdo_properties
 
@@ -431,21 +429,21 @@ contains
 
       ! Heavy isotopologues generally never diffuse faster than
       ! lighter isotopologues, so ensure values are always less than one:
-      @assertTrue(alpkn_18O < 1._r8)
-      @assertTrue(alpkn_HDO < 1._r8)
-      @assertTrue(alpkn_17O < 1._r8)
+      @assertLessThan(alpkn_18O, 1._r8)
+      @assertLessThan(alpkn_HDO, 1._r8)
+      @assertLessThan(alpkn_17O, 1._r8)
 
       ! There is likely a theoretical lower limit greater than zero
       ! but for these tests just set a number that is very unlikely
       ! to be seen in the Earth System, at least for atmosphere/ocean
       ! fluxes:
-      @assertTrue(alpkn_18O > 0.7_r8)
-      @assertTrue(alpkn_HDO > 0.7_r8)
-      @assertTrue(alpkn_17O > 0.7_r8)
+      @assertGreaterThan(alpkn_18O, 0.7_r8)
+      @assertGreaterThan(alpkn_HDO, 0.7_r8)
+      @assertGreaterThan(alpkn_17O, 0.7_r8)
 
       ! The factor should increase as the diffusion ratio increases:
-      @assertTrue(alpkn_18O < alpkn_HDO)
-      @assertTrue(alpkn_HDO < alpkn_17O)
+      @assertLessThan(alpkn_18O, alpkn_HDO)
+      @assertLessThan(alpkn_HDO, alpkn_17O)
 
    end subroutine test_shr_wiso_atm_ocn_kinetic_frac_diff_ratio
 
@@ -475,19 +473,19 @@ contains
       alpkn_prev = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(1), DIFF_RATIO_H218O)
 
       ! check that it is less than the physically-allowed upper limit:
-      @assertTrue(alpkn_prev < 1._r8)
+      @assertLessThan(alpkn_prev, 1._r8)
 
       ! Loop over the remaining friction velocities, checking that the factor
       ! decreases as ustar increases:
       do i = 2, size(ustars)
          alpkn = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(i), DIFF_RATIO_H218O)
 
-         @assertTrue(alpkn < alpkn_prev)
+         @assertLessThan(alpkn, alpkn_prev)
          alpkn_prev = alpkn
       end do
 
       ! Check that the final value is still greater than the expected lower limit:
-      @assertTrue(alpkn_prev > 0.7_r8)
+      @assertGreaterThan(alpkn_prev, 0.7_r8)
 
    end subroutine test_shr_wiso_atm_ocn_kinetic_frac_ustar_rough
 
@@ -518,19 +516,19 @@ contains
       alpkn_prev = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoqs(1), ustar, DIFF_RATIO_H218O)
 
       ! check that it is less than the physically-allowed upper limit:
-      @assertTrue(alpkn_prev < 1._r8)
+      @assertLessThan(alpkn_prev, 1._r8)
 
       ! Loop over the remaining roughness lengths, checking that the factor
       ! decreases as zoq increases:
       do i = 2, size(zoqs)
          alpkn = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoqs(i), ustar, DIFF_RATIO_H218O)
 
-         @assertTrue(alpkn < alpkn_prev)
+         @assertLessThan(alpkn, alpkn_prev)
          alpkn_prev = alpkn
       end do
 
       ! Check that the final value is still greater than the expected lower limit:
-      @assertTrue(alpkn_prev > 0.7_r8)
+      @assertGreaterThan(alpkn_prev, 0.7_r8)
 
    end subroutine test_shr_wiso_atm_ocn_kinetic_frac_zoq_rough
 
@@ -570,19 +568,19 @@ contains
       alpkn_prev = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(1), DIFF_RATIO_H218O)
 
       ! Check that it is greater than the expected lower limit:
-      @assertTrue(alpkn_prev > 0.7_r8)
+      @assertGreaterThan(alpkn_prev, 0.7_r8)
 
       ! Loop over the remaining friction velocities,
       ! checking that the factor increases as ustar increases:
       do i = 2, size(ustars)
          alpkn = icam_atm_ocn_kinetic_frac_factor(rbot, zbot, zoq, ustars(i), DIFF_RATIO_H218O)
 
-         @assertTrue(alpkn > alpkn_prev)
+         @assertGreaterThan(alpkn, alpkn_prev)
          alpkn_prev = alpkn
       end do
 
       ! check that the final value is less than the physically-allowed upper limit:
-      @assertTrue(alpkn_prev < 1._r8)
+      @assertLessThan(alpkn_prev, 1._r8)
 
    end subroutine test_shr_wiso_atm_ocn_kinetic_frac_ustar_smooth
 
