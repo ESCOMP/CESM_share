@@ -35,6 +35,8 @@ module test_shr_wiso
    real(r8), parameter :: ice_temps(8) = [203._r8, 213._r8, 223._r8, 233._r8, &
                                           243._r8, 253._r8, 263._r8, 273._r8]
 
+   ! NOTE:  These should always match the equivalent parameters
+   !        listed in the 'wiso_get_diffusivity_ratio' function.
    real(r8), parameter :: DIFF_RATIO_HDO   = 0.9757_r8
    real(r8), parameter :: DIFF_RATIO_H218O = 0.9727_r8
    real(r8), parameter :: DIFF_RATIO_H217O = DIFF_RATIO_H218O**0.5185_r8
