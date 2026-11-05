@@ -18,6 +18,7 @@ list(APPEND share_sources
   shr_spfn_mod.F90
   shr_strconvert_mod.F90
   shr_cal_mod.F90
+  shr_expr_parser_mod.F90
   shr_nl_mod.F90
   shr_string_mod.F90
   shr_timer_mod.F90
