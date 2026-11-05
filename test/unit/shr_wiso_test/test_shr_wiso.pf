@@ -6,11 +6,11 @@ module test_shr_wiso
    use funit
    use shr_kind_mod, only: r8=>SHR_KIND_R8
 
-   ! shr_wtracers_mod variables needed for testing:
-   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_BULK
-   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H218O
-   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H217O
-   use shr_wtracers_mod, only: WATER_SPECIES_TYPE_HDO
+   ! shr_water_species_mod variables needed for testing:
+   use shr_water_species_mod, only: WATER_SPECIES_TYPE_BULK
+   use shr_water_species_mod, only: WATER_SPECIES_TYPE_H218O
+   use shr_water_species_mod, only: WATER_SPECIES_TYPE_H217O
+   use shr_water_species_mod, only: WATER_SPECIES_TYPE_HDO
 
    ! shr_wiso_mod routines being tested
    use shr_wiso_mod, only: wiso_liq_vap_equil_frac_factor

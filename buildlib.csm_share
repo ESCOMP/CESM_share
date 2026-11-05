@@ -55,10 +55,10 @@ def buildlib(bldroot, installpath, case):
 
     filepath = [os.path.join(caseroot,"SourceMods","src.share")]
 
-    filepath.extend([os.path.join(srcroot,"components","cmeps", "cesm", "nuopc_cap_share"),
-                     os.path.join(srcroot,"components","cmeps", "cesm", "flux_atmocn"),
-                     os.path.join(srcroot,"share","src"),
-                     os.path.join(srcroot,"share","src","water_isotopes"),
+    filepath.extend([os.path.join(srcroot,"share","src","const"),
+                     os.path.join(srcroot,"share","src","util"),
+                     os.path.join(srcroot,"share","src","coupling"),
+                     os.path.join(srcroot,"share","src","science"),
                      os.path.join(srcroot,"share","RandNum","src"),
                      os.path.join(srcroot,"share","RandNum","src","dsfmt_f03"),
                      os.path.join(srcroot,"share","RandNum","src","kissvec"),
