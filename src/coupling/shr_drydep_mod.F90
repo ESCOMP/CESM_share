@@ -252,7 +252,6 @@ CONTAINS
     logical       :: exists           ! if file exists or not
     type(ESMF_VM) :: vm
     integer       :: localPet
-    integer       :: mpicom
     integer       :: s_logunit
     integer       :: rc
     character(*),parameter :: F00   = "('(shr_drydep_read) ',8a)"

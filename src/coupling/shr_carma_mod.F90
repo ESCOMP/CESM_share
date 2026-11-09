@@ -37,7 +37,7 @@ contains
     integer :: unitn            ! namelist unit number
     integer :: ierr             ! error code
     logical :: exists           ! if file exists or not
-    integer :: i, tmp(1)
+    integer :: tmp(1)
     integer :: logunit
     character(*),parameter :: F00   = "('(shr_carma_readnl) ',2a)"
 

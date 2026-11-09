@@ -113,7 +113,6 @@ contains
     character(len=2*CX) :: fire_emis_specifier(maxspc) = ' '
     character(len=CL)   :: fire_emis_factors_file = ' '
     logical             :: fire_emis_elevated = .true.
-    integer             :: i, tmp(1)
     character(*),parameter :: F00   = "('(shr_fire_emis_readnl) ',2a)"
     character(len=*), parameter :: subname='(shr_fire_emis_readnl)'
     !------------------------------------------------------------------
