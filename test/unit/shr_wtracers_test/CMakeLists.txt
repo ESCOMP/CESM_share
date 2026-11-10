@@ -4,6 +4,7 @@ set (pf_sources
 
 set(sources_needed
   shr_wtracers_mod.F90
+  shr_water_species_mod.F90
   shr_assert_mod.F90
   shr_infnan_mod.F90
   shr_kind_mod.F90

@@ -4,11 +4,7 @@
 
 This module exists to collect code shared between various CESM components.
 Excluding this "shared code" module, CESM components are built using disjoint
-sets of source code.  The use of this shared code is similar to the use of
-object code libraries where each subdirectory of share is equivalant to
-one library.  While object library routines are accessed by linking to libraries
-during the load phase, these shared code routines are accessed by including the
-appropriate source code directory path during the compile phase.
+sets of source code.
 
 Motivation for this code sharing includes:
 
@@ -20,11 +16,12 @@ Motivation for this code sharing includes:
   functionality.  For example netCDF file reading, basic mapping (re-gridding)
   functionality, and common character string manipulations.
 
-Current subsets ("libraries") of shared code only include:
+The main pieces of this repository are:
 
-util - very generic, general-purpose code that is likely to be useful to all
-      CESM components.  CESM components may be explicitly required to use some
-      parts of this code, for example the physical constants module.
+- `src/` - the bulk of the shared code; see [src/README.md](src/README.md) for details.
+- `RandNum/` - random number generators.
+- `include/` - header and include files used by the shared code.
+- `test/` - unit tests.
 
 ## Building and running CESM_share unit tests
 

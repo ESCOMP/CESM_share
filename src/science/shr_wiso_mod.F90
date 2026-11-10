@@ -56,10 +56,10 @@ contains
     use shr_kind_mod, only: cl=>shr_kind_cl
     use shr_sys_mod,  only: shr_sys_abort
 
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_BULK
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H218O
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H217O
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_HDO
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_BULK
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_H218O
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_H217O
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_HDO
 
     ! Function input arguements
     integer , intent(in)        :: isp  ! water species type index (e.g., H2O, HDO, H218O)
@@ -193,10 +193,10 @@ contains
     use shr_kind_mod, only: cl=>shr_kind_cl
     use shr_sys_mod,  only: shr_sys_abort
 
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_BULK
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H218O
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H217O
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_HDO
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_BULK
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_H218O
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_H217O
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_HDO
 
     ! Function input arguements
     integer , intent(in)        :: isp  ! water species type index (e.g., H2O, HDO, H218O)
@@ -363,10 +363,10 @@ contains
     use shr_kind_mod, only: cl=>shr_kind_cl
     use shr_sys_mod,  only: shr_sys_abort
 
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_BULK
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H218O
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_H217O
-    use shr_wtracers_mod, only: WATER_SPECIES_TYPE_HDO
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_BULK
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_H218O
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_H217O
+    use shr_water_species_mod, only: WATER_SPECIES_TYPE_HDO
 
     ! Function input arguments
     integer, intent(in) :: isp  ! water species type index (e.g., H2O, HDO, H218O)

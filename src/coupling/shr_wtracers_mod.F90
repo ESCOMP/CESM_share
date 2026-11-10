@@ -24,6 +24,8 @@ module shr_wtracers_mod
    use shr_string_mod    , only : shr_string_withoutSuffix
    use shr_infnan_mod    , only : shr_infnan_isnan
    use shr_sys_mod       , only : shr_sys_abort
+   use shr_water_species_mod, only : WATER_SPECIES_TYPE_BULK, WATER_SPECIES_TYPE_H218O
+   use shr_water_species_mod, only : WATER_SPECIES_TYPE_H217O, WATER_SPECIES_TYPE_HDO
    use nuopc_shr_methods , only : chkerr
    use NUOPC             , only : NUOPC_CompAttributeGet
    use ESMF              , only : ESMF_GridComp
@@ -77,14 +79,6 @@ module shr_wtracers_mod
 
    ! Species name associated with bulk water tracers
    character(len=*), parameter, public :: WATER_SPECIES_NAME_BULK = "-"
-
-   ! Possible species types
-   integer, parameter, public :: WATER_SPECIES_TYPE_UNDEFINED = -1
-   integer, parameter, public :: WATER_SPECIES_TYPE_BULK = 0  ! This one is special: total/bulk water rather than a species
-   integer, parameter, public :: WATER_SPECIES_TYPE_H218O = 1
-   integer, parameter, public :: WATER_SPECIES_TYPE_H217O = 2
-   integer, parameter, public :: WATER_SPECIES_TYPE_HDO = 3
-   integer, parameter, public :: WATER_SPECIES_TYPE_MAXVAL = 3
 
    ! Suffix for water tracer field names
    character(len=*), parameter, public :: WTRACERS_SUFFIX = "_wtracers"
