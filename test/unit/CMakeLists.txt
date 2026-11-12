@@ -27,3 +27,5 @@ add_subdirectory(shr_wv_sat_test)
 add_subdirectory(shr_precip_test)
 
 add_subdirectory(shr_cal_test)
+
+add_subdirectory(glc_elevclass_test)
