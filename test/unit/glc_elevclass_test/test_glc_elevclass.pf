@@ -5,6 +5,7 @@ module test_glc_elevclass
   use funit
   use glc_elevclass_mod
   use shr_kind_mod, only : r8 => shr_kind_r8
+  use, intrinsic :: iso_fortran_env, only : output_unit
 
   implicit none
 
@@ -14,6 +15,8 @@ module test_glc_elevclass
      procedure :: setUp
      procedure :: tearDown
   end type TestGLCElevclass
+
+  real(r8), parameter :: tol = 1.e-13_r8
 
 contains
 
@@ -246,5 +249,87 @@ contains
     str = glc_elevclass_as_string(12)
     @assertEqual('12', trim(str))
   end subroutine test_glc_elevclass_as_string_2digits
+
+  ! ------------------------------------------------------------------------
+  ! Tests of glc_get_fractional_icecov
+  !
+  ! Note that the first dimension of glc_icefrac_ec spans [1 -> nec+1], with index 1
+  ! corresponding to bare land and index ec+1 corresponding to elevation class ec.
+  ! ------------------------------------------------------------------------
+
+  @Test
+  subroutine test_glc_get_fractional_icecov_partial_ice(this)
+    ! Test a single point with partial ice cover in a middle elevation class
+    class(TestGLCElevclass), intent(inout) :: this
+    real(r8) :: glc_icefrac_ec(4, 1)
+
+    call glc_elevclass_init(3, [0._r8, 100._r8, 200._r8, 300._r8])
+
+    call glc_get_fractional_icecov(3, [150._r8], [0.3_r8], glc_icefrac_ec, output_unit)
+
+    @assertEqual([0.7_r8, 0._r8, 0.3_r8, 0._r8], glc_icefrac_ec(:,1), tolerance=tol)
+  end subroutine test_glc_get_fractional_icecov_partial_ice
+
+  @Test
+  subroutine test_glc_get_fractional_icecov_full_ice(this)
+    ! Test a single point that is fully ice-covered
+    class(TestGLCElevclass), intent(inout) :: this
+    real(r8) :: glc_icefrac_ec(4, 1)
+
+    call glc_elevclass_init(3, [0._r8, 100._r8, 200._r8, 300._r8])
+
+    call glc_get_fractional_icecov(3, [150._r8], [1._r8], glc_icefrac_ec, output_unit)
+
+    @assertEqual([0._r8, 0._r8, 1._r8, 0._r8], glc_icefrac_ec(:,1), tolerance=tol)
+  end subroutine test_glc_get_fractional_icecov_full_ice
+
+  @Test
+  subroutine test_glc_get_fractional_icecov_no_ice(this)
+    ! Test a single point that is ice-free: all of the area should be in the bare land
+    ! elevation class, including the elevation class containing this point's topography
+    class(TestGLCElevclass), intent(inout) :: this
+    real(r8) :: glc_icefrac_ec(4, 1)
+
+    call glc_elevclass_init(3, [0._r8, 100._r8, 200._r8, 300._r8])
+
+    call glc_get_fractional_icecov(3, [150._r8], [0._r8], glc_icefrac_ec, output_unit)
+
+    @assertEqual([1._r8, 0._r8, 0._r8, 0._r8], glc_icefrac_ec(:,1), tolerance=tol)
+  end subroutine test_glc_get_fractional_icecov_no_ice
+
+  @Test
+  subroutine test_glc_get_fractional_icecov_multiple_points_different_ecs(this)
+    ! Test multiple points, each in a different elevation class
+    class(TestGLCElevclass), intent(inout) :: this
+    real(r8) :: glc_icefrac_ec(4, 3)
+    real(r8) :: expected(4, 3)
+
+    call glc_elevclass_init(3, [0._r8, 100._r8, 200._r8, 300._r8])
+
+    call glc_get_fractional_icecov(3, [50._r8, 150._r8, 250._r8], [0.2_r8, 0.5_r8, 0.9_r8], &
+         glc_icefrac_ec, output_unit)
+
+    expected(:,1) = [0.8_r8, 0.2_r8, 0._r8, 0._r8]
+    expected(:,2) = [0.5_r8, 0._r8, 0.5_r8, 0._r8]
+    expected(:,3) = [0.1_r8, 0._r8, 0._r8, 0.9_r8]
+    @assertEqual(expected, glc_icefrac_ec, tolerance=tol)
+  end subroutine test_glc_get_fractional_icecov_multiple_points_different_ecs
+
+  @Test
+  subroutine test_glc_get_fractional_icecov_multiple_points_same_ec(this)
+    ! Test multiple points in the same elevation class
+    class(TestGLCElevclass), intent(inout) :: this
+    real(r8) :: glc_icefrac_ec(4, 2)
+    real(r8) :: expected(4, 2)
+
+    call glc_elevclass_init(3, [0._r8, 100._r8, 200._r8, 300._r8])
+
+    call glc_get_fractional_icecov(3, [120._r8, 180._r8], [0.4_r8, 0.7_r8], &
+         glc_icefrac_ec, output_unit)
+
+    expected(:,1) = [0.6_r8, 0._r8, 0.4_r8, 0._r8]
+    expected(:,2) = [0.3_r8, 0._r8, 0.7_r8, 0._r8]
+    @assertEqual(expected, glc_icefrac_ec, tolerance=tol)
+  end subroutine test_glc_get_fractional_icecov_multiple_points_same_ec
 
 end module test_glc_elevclass
