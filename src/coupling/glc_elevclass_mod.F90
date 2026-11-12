@@ -383,20 +383,15 @@ contains
   subroutine glc_get_fractional_icecov(nec, glc_topo, glc_icefrac, glc_icefrac_ec, logunit)
 
     !------------------
-    ! Get the fractional ice cover for each glc elevation class
-    !
-    ! First get elevation class of each grid cell on the glc grid.
-    ! This does not consider glc_frac: it simply gives the elevation class that the grid
-    ! cell would be in if it were ice-covered. So it never returns an elevation class of
-    ! 0 (bare land). (This design would allow us, in the future, to have glc grid cells
-    ! that are part ice-covered, part ice-free.)
+    ! Get the fractional ice cover for each glc elevation class, including the bare land
+    ! elevation class
     !------------------
 
     ! input/output variables
     integer , intent(in)  :: nec              ! number of elevation classes 
     real(r8), intent(in)  :: glc_topo(:)      ! topographic height
     real(r8), intent(in)  :: glc_icefrac(:)
-    real(r8), intent(out) :: glc_icefrac_ec(:,:)
+    real(r8), intent(out) :: glc_icefrac_ec(:,:) ! dimensioned [nec+1, npts], where index 1 of first dimension is bare land
     integer , intent(in)  :: logunit
     !
     ! local variables
@@ -411,6 +406,11 @@ contains
     npts = size(glc_topo)
     allocate(glc_elevclass(npts))
 
+    ! First get elevation class of each grid cell on the glc grid.
+    !
+    ! This does not consider glc_icefrac: it simply gives the elevation class that the
+    ! grid cell would be in if it were ice-covered. So it never returns an elevation class
+    ! of 0 (bare land).
     do glc_pt = 1, npts
        call glc_get_elevation_class(glc_topo(glc_pt), glc_elevclass(glc_pt), err_code)
        select case (err_code)
@@ -426,11 +426,12 @@ contains
        end select
     end do
 
-    ! note that glc_elevclass gives the elevation class of each glc
+    ! Now determine the fractional ice cover for each elevation class.
+    !
+    ! Note that glc_elevclass gives the elevation class of each glc
     ! grid cell, assuming that the grid cell is ice-covered.
     ! glc_elevclass for a given glc gridcell spans [0 -> nec]
     ! the first and undistributed dimension of glc_icefrac_ec spans [1 -> nec+1]
-
     do ec = 0, nec
        do glc_pt = 1,npts
           if (ec == 0) then
