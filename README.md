@@ -1,20 +1,20 @@
-# CESM_share
+# EPS_Share
 
-## Description of CESM_share
+## Description of EPS_Share
 
-This module exists to collect code shared between various CESM components.
-Excluding this "shared code" module, CESM components are built using disjoint
-sets of source code.
+This module exists to collect utilities and other common code shared between multiple Earth
+Prediction System (EPS) components. This shared code is used by CMEPS, CDEPS, and various
+component models.
 
 Motivation for this code sharing includes:
 
-- facilitating consistent physics between all models.  For example, uniform
-  solar-zenith-angle/orbital calculations and uniform physical constants.
-- providing an interface/API between component models and the flux-coupler
-  component in the CESM framework.
+- facilitating consistent physics between all models, such as uniform
+  solar-zenith-angle/orbital calculations and uniform physical constants
+- providing an interface/API between component models and the mediator
+  (CMEPS)
 - avoiding the need for redundant implementations of commonly needed
-  functionality.  For example netCDF file reading, basic mapping (re-gridding)
-  functionality, and common character string manipulations.
+  functionality, such as netCDF file reading and common character string
+  manipulations
 
 The main pieces of this repository are:
 
@@ -23,7 +23,7 @@ The main pieces of this repository are:
 - `include/` - header and include files used by the shared code.
 - `test/` - unit tests.
 
-## Building and running CESM_share unit tests
+## Building and running EPS_Share unit tests
 
 ### Prerequisites
 
@@ -55,7 +55,7 @@ the unit tests from the last time you ran them from this directory:
 ../cime/scripts/fortran_unit_testing/run_tests.py --build-dir ./unit_tests.temp --cmake-args " -DUNITTESTS=ON -DUSE_CIME_MACROS=ON"
 ```
 
-Note that `UNITTESTS` and `USE_CIME_MACROS` are variables defined in the CESM_share CMake
+Note that `UNITTESTS` and `USE_CIME_MACROS` are variables defined in the EPS_Share CMake
 build to turn on specific behavior that is needed with this unit test build procedure (but
 would not be needed when using this CMake build to do a general-purpose build of the
 library).
@@ -77,7 +77,7 @@ First, swap / load some needed modules:
 
 ```
 module swap cray-mpich mpi-serial
-module load parallelio
+module load parallelio-serial
 ```
 
 leading to this module environment:
