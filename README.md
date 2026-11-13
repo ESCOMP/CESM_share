@@ -77,7 +77,7 @@ First, swap / load some needed modules:
 
 ```
 module swap cray-mpich mpi-serial
-module load parallelio
+module load parallelio-serial
 ```
 
 leading to this module environment:
